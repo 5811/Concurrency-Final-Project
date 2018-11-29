@@ -3,7 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <getopt.h>
-
+#include <stdint.h>
 
 
 
@@ -49,4 +49,14 @@ int main(int argc, char** argv){
                 }
         }
 
+}
+
+//rotation functions based off this blog post https://blog.regehr.org/archives/1063 
+uint32_t leftRotate (uint32_t value, uint32_t offset)
+{
+  return (value<<offset) | (value>>(-offset&31));
+}
+uint32_t rightRotate (uint32_t value, uint32_t offset)
+{
+  return (value>>offset) | (value<<(-offset&31));
 }
