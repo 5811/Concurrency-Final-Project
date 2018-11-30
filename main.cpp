@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <unistd.h>
 #include <getopt.h>
@@ -80,6 +81,45 @@ const uint32_t roundConstants[64] =
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
+//hashes a 512 bit/64 byte chunk
+void hashChunk(char* chunk, uint32_t* currentHash){
+    uint32_t scheduleArray[64];
+
+    std::memcpy(chunk, scheduleArray, 64);
+
+    for(int i= 16; i<64; i++){
+        uint32_t s0 = (rightRotate(scheduleArray[i-15], 7) ^ rightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3));
+        uint32_t s1 = rightRotate(scheduleArray[i-2], 17) ^ rightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
+        scheduleArray[i] = scheduleArray[i-16] + s0 + scheduleArray[i-7] + s1;
+
+    }
+
+    uint32_t workingVariables[8];
+    std::memcpy(currentHash, workingVariables, 32);
+
+    for (int i=0; i<64; i++){
+        uint32_t S1 = rightRotate(workingVariables[4], 6) ^ rightRotate(workingVariables[4], 11) ^ rightRotate(workingVariables[4], 25);
+        uint32_t ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+        uint32_t temp1 = workingVariables[7] + S1 + ch + roundConstants[i] + scheduleArray[i];
+        uint32_t S0 = rightRotate(workingVariables[0] , 2) ^ rightRotate(workingVariables[0] , 13) ^ rightRotate(workingVariables[0] , 22);
+        uint32_t maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+        uint32_t temp2 = S0 + maj;
+ 
+        workingVariables[7] = workingVariables[6];
+        workingVariables[6] = workingVariables[5];
+        workingVariables[5] = workingVariables[4];
+        workingVariables[4] = workingVariables[3]+ temp1;
+        workingVariables[3] = workingVariables[2];
+        workingVariables[2] = workingVariables[1];
+        workingVariables[1] = workingVariables[0];
+        workingVariables[0] = temp1 + temp2;
+    }
+
+    for(int i=0; i<8; i++){
+        currentHash[i]+=workingVariables[i];
+    }
+
+}
 std::string hash(char* input, uint64_t size){
     //initialize hash values
     uint32_t hash[8]={
@@ -107,9 +147,14 @@ std::string hash(char* input, uint64_t size){
     buffer[size]=0x80;
     std::memset(buffer+size+1, 0, processedSize-size-9);
     //append size
-    (uint64_t*)(buffer+processedSize-8)[0]=size;
+    ((uint64_t*)(buffer+processedSize-8))[0]=size;
     
+    //hash chunks in a loop
+    for(uint32_t i=0; i<processedSize/64; i++){
+        char* chunkAddress=buffer+(i*64);
+        hashChunk(chunkAddress, hash);
 
+    }
 
 
 
