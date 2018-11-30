@@ -20,38 +20,6 @@ static std::string target="";
 static int workers=1;
 static int step=1;
 
-int main(int argc, char** argv){
-
-     //parse options
-    while(true)
-        {
-                const auto opt= getopt_long(argc, argv, "t:w:s:", long_options, nullptr);
-
-                if(opt==-1)
-                        break;
-
-                switch(opt)
-                {
-                        case 't':
-                                target=std::string(optarg);
-                                std::cout<<"Target leading characters of hash: "<< target<<std::endl;
-                                break;
-
-                        case 'w':
-                                workers=std::stoi(optarg);
-                                std::cout<<"workers: "<< workers<<std::endl;
-                                break;
-                        case 's':
-                                step=std::stoi(optarg);
-                                std::cout<<"Step: "<< step<<std::endl;
-                                break;
-                        default:
-                                std::cout<<"Undefined option found"<<std::endl;
-                }
-        }
-
-}
-
 //rotation functions based off this blog post https://blog.regehr.org/archives/1063 
 uint32_t leftRotate (uint32_t value, uint32_t offset)
 {
@@ -85,17 +53,16 @@ const uint32_t roundConstants[64] =
 void hashChunk(char* chunk, uint32_t* currentHash){
     uint32_t scheduleArray[64];
 
-    std::memcpy(chunk, scheduleArray, 64);
+    std::memcpy(scheduleArray, chunk, 64);
 
     for(int i= 16; i<64; i++){
-        uint32_t s0 = (rightRotate(scheduleArray[i-15], 7) ^ rightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3));
+        uint32_t s0 = rightRotate(scheduleArray[i-15], 7) ^ rightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3);
         uint32_t s1 = rightRotate(scheduleArray[i-2], 17) ^ rightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
         scheduleArray[i] = scheduleArray[i-16] + s0 + scheduleArray[i-7] + s1;
-
     }
 
     uint32_t workingVariables[8];
-    std::memcpy(currentHash, workingVariables, 32);
+    std::memcpy(workingVariables, currentHash, 32);
 
     for (int i=0; i<64; i++){
         uint32_t S1 = rightRotate(workingVariables[4], 6) ^ rightRotate(workingVariables[4], 11) ^ rightRotate(workingVariables[4], 25);
@@ -120,9 +87,35 @@ void hashChunk(char* chunk, uint32_t* currentHash){
     }
 
 }
-std::string hash(char* input, uint64_t size){
+
+inline uint32_t ceilingIntDivision(const uint32_t val, const uint32_t mod) { //assert mod != 0, val != 0
+    return (val + mod - 1) / mod;
+}
+
+inline uint32_t generateProcessSize(const uint32_t inputSize) {
+    uint32_t inputSizeInBits = inputSize * 8;
+    uint32_t paddedInBits = inputSizeInBits + 64 + 1;
+    return ceilingIntDivision(paddedInBits, 512) * 512 / 8;
+}
+
+inline void writeIntToBufferAsBigEndian(char* start, const uint64_t value) {
+    *((uint64_t*) start) = value;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    for (unsigned i = 0; i < sizeof(uint64_t) / 2; ++i) {
+        char temp = start[i];
+        start[i] = start[sizeof(uint64_t) - 1 - i];
+        start[sizeof(uint64_t) - 1 - i] = temp; 
+    }
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    // Do nothing
+#elif __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__
+    #error "PDP byte ordering not handled."
+#endif
+}
+
+void hash(const char* const input, const uint64_t size, uint32_t* result){
     //initialize hash values
-    uint32_t hash[8]={
+    uint32_t hash[]={
     0x6a09e667, 
     0xbb67ae85,
     0x3c6ef372,
@@ -136,30 +129,66 @@ std::string hash(char* input, uint64_t size){
     //preprocessing
 
     //processedSize is size of padded array in bytes
-    uint32_t processedSize=size*8+64+1;
-    processedSize+= (512-processedSize%512);
-    processedSize=processedSize/8;
+    uint32_t processedSize=generateProcessSize(size);
 
     char* buffer=(char*) malloc(processedSize);
     //copy over input
-    std::memcpy(input, buffer, size);
+    std::memcpy(buffer, input, size);
     //append 1 bit and 0 bits
     buffer[size]=0x80;
-    std::memset(buffer+size+1, 0, processedSize-size-9);
+    std::memset(buffer+size+1, 0, processedSize-size-1-sizeof(uint64_t));
     //append size
-    ((uint64_t*)(buffer+processedSize-8))[0]=size;
+    writeIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size);
     
     //hash chunks in a loop
     for(uint32_t i=0; i<processedSize/64; i++){
         char* chunkAddress=buffer+(i*64);
         hashChunk(chunkAddress, hash);
-
     }
-
-
 
     //free memory we allocated earlier
     free(buffer);
+    std::memcpy(result, hash, 8*sizeof(uint32_t));
+    return;
+}
 
-    return "Incomplete";
+int main(int argc, char** argv){
+
+     //parse options
+    while(true)
+    {
+            const auto opt= getopt_long(argc, argv, "t:w:s:", long_options, nullptr);
+
+            if(opt==-1)
+                    break;
+
+            switch(opt)
+            {
+                    case 't':
+                            target=std::string(optarg);
+                            std::cout<<"Target leading characters of hash: "<< target<<std::endl;
+                            break;
+
+                    case 'w':
+                            workers=std::stoi(optarg);
+                            std::cout<<"workers: "<< workers<<std::endl;
+                            break;
+                    case 's':
+                            step=std::stoi(optarg);
+                            std::cout<<"Step: "<< step<<std::endl;
+                            break;
+                    default:
+                            std::cout<<"Undefined option found"<<std::endl;
+            }
+    }
+
+    uint32_t hashResult[8];
+    char input='a';
+    hash(&input,0, hashResult);
+
+    for(int i=0; i<8; i++){
+        std::cout<<std::hex<<hashResult[i];
+    }
+    std::cout<<std::endl;
+
 }
