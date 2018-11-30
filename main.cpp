@@ -21,10 +21,6 @@ static int workers=1;
 static int step=1;
 
 //rotation functions based off this blog post https://blog.regehr.org/archives/1063 
-uint32_t leftRotate (uint32_t value, uint32_t offset)
-{
-  return (value<<offset) | (value>>(-offset&31));
-}
 uint32_t rightRotate (uint32_t value, uint32_t offset)
 {
   return (value>>offset) | (value<<(-offset&31));
@@ -113,7 +109,7 @@ inline void writeIntToBufferAsBigEndian(char* start, const uint64_t value) {
 #endif
 }
 
-void hash(const char* const input, const uint64_t size, uint32_t* result){
+void hash(const char* input, const uint64_t size, uint32_t* result){
     //initialize hash values
     uint32_t hash[]={
     0x6a09e667, 
@@ -138,7 +134,7 @@ void hash(const char* const input, const uint64_t size, uint32_t* result){
     buffer[size]=0x80;
     std::memset(buffer+size+1, 0, processedSize-size-1-sizeof(uint64_t));
     //append size
-    writeIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size);
+    writeIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size*8);
     
     //hash chunks in a loop
     for(uint32_t i=0; i<processedSize/64; i++){
