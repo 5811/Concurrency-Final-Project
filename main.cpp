@@ -204,8 +204,8 @@ int main(int argc, char** argv){
     }
 
     uint32_t hashResult[8];
-    char input='a';
-    hash(&input,1, hashResult);
+    char input[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+    hash(input,std::strlen(input), hashResult);
 
     for(int i=0; i<8; i++){
         std::cout<<std::hex<<hashResult[i];
