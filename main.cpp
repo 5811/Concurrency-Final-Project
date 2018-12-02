@@ -45,17 +45,39 @@ const uint32_t roundConstants[64] =
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
+
 //hashes a 512 bit/64 byte chunk
 void hashChunk(char* chunk, uint32_t* currentHash){
     uint32_t scheduleArray[64];
 
-    std::memcpy(scheduleArray, chunk, 64);
+	/*for (int i = 0; i < 64; i++) {
+        std::cout << "Chunk[" << i << "] :" << int(chunk[i]) << std::endl;
+    }*/
 
+	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	std::memcpy(scheduleArray, chunk, 64);
+	#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	char * charScheduleArray = (char*)scheduleArray;
+	for (int i = 0; i < 64; i+=4) {
+		charScheduleArray[i] = chunk[i+3];
+		charScheduleArray[i+1] = chunk[i+2];
+		charScheduleArray[i+2] = chunk[i+1];
+		charScheduleArray[i+3] = chunk[i];
+    }
+	/*for (int i = 0; i < 64; i++) {
+        std::cout << "Char[" << i << "] :" << int(charScheduleArray[i]) << std::endl;
+    }*/
+	#endif
+	
     for(int i= 16; i<64; i++){
         uint32_t s0 = rightRotate(scheduleArray[i-15], 7) ^ rightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3);
         uint32_t s1 = rightRotate(scheduleArray[i-2], 17) ^ rightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
         scheduleArray[i] = scheduleArray[i-16] + s0 + scheduleArray[i-7] + s1;
     }
+
+	/*for (int i = 0; i < 64; i++) {
+    	std::cout << "Array " << i << " : " << scheduleArray[i] << std::endl;
+    }*/
 
     uint32_t workingVariables[8];
     std::memcpy(workingVariables, currentHash, 32);
@@ -136,6 +158,9 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     //append size
     writeIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size*8);
     
+	/*for (int i = 0; i < 64; i++) {
+		std::cout << "Buffer[" << i << "] :" << int(buffer[i]) << std::endl;
+	}*/
     //hash chunks in a loop
     for(uint32_t i=0; i<processedSize/64; i++){
         char* chunkAddress=buffer+(i*64);
