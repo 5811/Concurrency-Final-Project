@@ -10,6 +10,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <thread>
+#include <time.h>
 
 
 static struct option long_options[]=
@@ -22,6 +23,18 @@ static struct option long_options[]=
 static std::string target="";
 static int workers=1;
 static int step=1;
+
+struct timespec start, end;
+
+void startTimer(){
+    clock_gettime(CLOCK_MONOTONIC, &start);
+}
+double endTimer(){
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double time= end.tv_sec-start.tv_sec;
+    time=time+(end.tv_nsec-start.tv_nsec)/1000000000.0;
+    return time;
+}
 
 //function for printing hashes as a hexstring, assumes the hash is an array of uint32_t of length 8
 void printHash(uint32_t* hash){
@@ -292,6 +305,9 @@ int main(int argc, char** argv){
 
     //array of worker threads if we need them
     std::thread workerThreads[workers];
+
+
+    startTimer();
     switch(step){
         case 1:
             searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
@@ -318,9 +334,14 @@ int main(int argc, char** argv){
     }
 
 
+    double timeTaken=endTimer();
+
+
     printNonce(nonce);
     std::cout<<"hashes to"<<std::endl;
     hash((char*)nonce,32, hashResult);
     printHash(hashResult);
+
+    std::cout<<"Time taken: "<<timeTaken<<" seconds"<<std::endl;
 
 }
