@@ -7,6 +7,9 @@
 #include <stdint.h>
 #include <atomic>
 #include <iomanip>
+#include <time.h>
+#include <pthread.h>
+#include <thread>
 
 
 static struct option long_options[]=
@@ -224,6 +227,7 @@ void searchForNonceThread(uint8_t leadingByte, uint32_t startingValue, uint32_t 
         //get done lock and check if we have found a working nonce or if another thread is done 
         while (lock.test_and_set(std::memory_order_acquire)); 
         if(done==true){
+            lock.clear(std::memory_order_release);
             return;
         }
         else{
@@ -286,15 +290,25 @@ int main(int argc, char** argv){
     unsigned char nonce[32];
 
 
+    //array of worker threads if we need them
+    std::thread workerThreads[workers];
     switch(step){
         case 1:
             searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
 
-            hash((char*)nonce,32, hashResult);
-
             
             break;
         case 2:
+            for(int i=0; i<workers; i++){
+                workerThreads[i]=std::thread(searchForNonceThread, 0, i,workers,(uint32_t*)nonce);
+
+            }
+            for(int i=0; i<workers; i++){
+                workerThreads[i].join();
+
+            }
+
+
             break;
         case 3:
             break;
@@ -302,8 +316,11 @@ int main(int argc, char** argv){
         default:
             std::cout<<"Undefined step"<<std::endl;
     }
+
+
     printNonce(nonce);
     std::cout<<"hashes to"<<std::endl;
+    hash((char*)nonce,32, hashResult);
     printHash(hashResult);
 
 }
