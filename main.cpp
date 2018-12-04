@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <stdint.h>
-
-
+#include <atomic>
+#include <iomanip>
 
 
 static struct option long_options[]=
@@ -20,6 +20,20 @@ static std::string target="";
 static int workers=1;
 static int step=1;
 
+//function for printing hashes as a hexstring, assumes the hash is an array of uint32_t of length 8
+void printHash(uint32_t* hash){
+    for(int i=0; i<8; i++){
+        std::cout<<std::hex<<std::setfill('0')<<std::setw(8)<<unsigned(hash[i]);
+    }
+    std::cout<<std::endl;
+}
+void printNonce(unsigned char* charPointer){;
+    for(uint32_t i=0; i<8*sizeof(uint32_t); i++){
+        //std::cout<< "Byte[" << i << "]" << std::hex<<std::setfill('0')<<std::setw(2)<< int(charPointer[i])  << std::endl;
+        std::cout<<std::hex<<std::setfill('0')<<std::setw(2)<<int(charPointer[i]);
+    }
+    std::cout<<std::endl;
+}
 //rotation functions based off this blog post https://blog.regehr.org/archives/1063 
 uint32_t rightRotate (uint32_t value, uint32_t offset)
 {
@@ -172,6 +186,71 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     std::memcpy(result, hash, 8*sizeof(uint32_t));
     return;
 }
+static std::atomic_flag lock = ATOMIC_FLAG_INIT;
+static bool done=false;
+
+void incrementNonce(uint32_t* value, uint32_t increment){
+     int i=0;
+        while(true){
+            if(i==8){
+                std::cout<<"Checked all possible 512 bit values! Still no nonce found!"<<std::endl;
+            }
+            uint32_t temp=i==0? value[i]+increment : value[i]+1;
+            if(temp<value[i]){
+                //overflow, increment i to handle the carry
+                value[i]=temp;
+                i++;
+            }
+            else{
+                value[i]=temp;
+                break;
+            }
+        }
+}
+void searchForNonceThread(uint8_t leadingByte, uint32_t startingValue, uint32_t increment, uint32_t* result){
+    //allocate 32 bytes for the nonce we are going to hash
+    //since we are using SHA 256, the number of possible inputs with 32 bytes is the same as the number of possible hashes
+    //there may be some overlap, but we are not looking for an exact hash so it should be reasonable to expect us to find a working nonce
+    //before exhausting all possible nonces
+    uint32_t nonce[8]={0};
+    nonce[0]=startingValue;
+
+    uint32_t tempHash[8];
+
+    while(true){
+        //generate hash
+        hash((char*)nonce, 32, tempHash);
+
+        //get done lock and check if we have found a working nonce or if another thread is done 
+        while (lock.test_and_set(std::memory_order_acquire)); 
+        if(done==true){
+            return;
+        }
+        else{
+                if(((uint8_t*)tempHash)[3]==leadingByte){
+                    done=true;
+                    /*
+                    std::cout<<"Found something that hashes to: ";
+                    printHash(tempHash);
+                    std::cout<<"leading bytes: ";
+                    std::cout<<std::hash<<(tempHash)[0];
+                    std::cout<<std::endl;
+                    */
+                    lock.clear(std::memory_order_release);
+                    std::memcpy(result, nonce, 8*sizeof(uint32_t));
+                    return;
+                }
+        }
+        lock.clear(std::memory_order_release);
+
+        //increment
+       incrementNonce(nonce, increment);
+    }
+
+
+
+
+}
 
 int main(int argc, char** argv){
 
@@ -204,12 +283,27 @@ int main(int argc, char** argv){
     }
 
     uint32_t hashResult[8];
-    char input[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-    hash(input,std::strlen(input), hashResult);
+    unsigned char nonce[32];
 
-    for(int i=0; i<8; i++){
-        std::cout<<std::hex<<hashResult[i];
+
+    switch(step){
+        case 1:
+            searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
+
+            hash((char*)nonce,32, hashResult);
+
+            
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+
+        default:
+            std::cout<<"Undefined step"<<std::endl;
     }
-    std::cout<<std::endl;
+    printNonce(nonce);
+    std::cout<<"hashes to"<<std::endl;
+    printHash(hashResult);
 
 }
