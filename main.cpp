@@ -268,11 +268,20 @@ void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t
 
 
 }
-/*
-void searchForNonceGPU(uint16_t leadingByte, uint32_t startingValue, uint32_t threads, uint32_t* result){
+
+void searchForNonceGPU(uint16_t leadingByte, uint32_t* result){
+
+
+    uint32_t* gpuResult;
+
+    cudaMalloc((void**)&gpuResult, 8*sizeof(uint32_t));
+
+    cudaMemcpy(gpuResult, result, 8*sizeof(uint32_t), cudaMemcpyHostToDevice);
+
+    searchForNonce<<<blocks, 32>>>(leadingByte, gpuResult);
 
 }
-*/
+
 
 int main(int argc, char** argv){
 
@@ -312,14 +321,18 @@ int main(int argc, char** argv){
     std::thread workerThreads[workers];
 
 
-    startTimer();
+    double timeTaken;
     switch(step){
         case 1:
-            searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
 
+
+            startTimer();
+            searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
+            timeTaken=endTimer();
             
             break;
         case 2:
+            startTimer();
             for(int i=0; i<workers; i++){
                 workerThreads[i]=std::thread(searchForNonceThread, 0, i,workers,(uint32_t*)nonce);
 
@@ -328,7 +341,7 @@ int main(int argc, char** argv){
                 workerThreads[i].join();
 
             }
-
+            timeTaken=endTimer();
 
             break;
         case 3:
@@ -339,7 +352,7 @@ int main(int argc, char** argv){
     }
 
 
-    double timeTaken=endTimer();
+    
 
 
     printNonce(nonce);

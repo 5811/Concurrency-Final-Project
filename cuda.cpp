@@ -30,171 +30,6 @@ float* accessEntry(float *array, int rowSize, int x, int y){
 	return array+(x*rowSize+y);
 }
 
-__device__
-float deviceDistance(float* a, float* b, int dimensions){
-    float sum=0;
-    for(size_t i=0; i<dimensions; i++){
-		float temp=(a[i]-b[i]);
-		temp=temp*temp;
-        sum+=temp;
-    }
-
-    return sum;
-}
-__device__
-int deviceFindClosestCentroid(float* point, float* centroids, int dimensions, int numCentroids){
-    int bestCentroid=0;
-    float minDistance=-1;
-    for(size_t i=0; i<numCentroids; i++){
-        float currentDistance=deviceDistance(accessRow(centroids, dimensions, i), point, dimensions);
-	
-		if(minDistance<0 || currentDistance<=minDistance){
-			bestCentroid=i;
-			minDistance=currentDistance;
-		}
-    }
-
-    return bestCentroid;
-}
-__global__
-extern void sumCentroids(float* points, float* centroids, float* newCentroids, int* pointCounts, int dimensions, int numPoints, int numCentroids){
-	
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-	
-	if(i<numPoints){
-		float* point=accessRow(points, i, dimensions);
-		int bestCentroid=deviceFindClosestCentroid(point, centroids, dimensions, numCentroids);
-		
-		for(size_t j=0; j<dimensions; j++){
-            atomicAdd(accessRow(newCentroids, bestCentroid, dimensions)+j, point[j]);
-        }
-		atomicAdd(pointCounts+bestCentroid, 1);
-	}
-}
-__global__
-extern void sharedSumCentroids(float* points, float* centroids, float* newCentroids, int* pointCounts, int dimensions, int numPoints, int numCentroids){
-	
-	extern __shared__ char sharedMemory[];
-	
-	int sizeOfMemory=numCentroids*dimensions*sizeof(float) + numCentroids*sizeof(int);
-	
-	//zero shared memory
-	for (int i = threadIdx.x; i < sizeOfMemory; i += blockDim.x) 
-	{
-		sharedMemory[i] = 0;
-	}
-	__syncthreads();
-	
-	//get pointers for individual chunks of shared memory
-	float* blockSum= (float*) sharedMemory;
-	int* blockCount=(int*)(blockSum+numCentroids*dimensions);
-	
-	
-	
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-
-	
-	if(i<numPoints){
-		float* point=accessRow(points, i, dimensions);
-		int bestCentroid=deviceFindClosestCentroid(point, centroids, dimensions, numCentroids);
-		
-		for(size_t j=0; j<dimensions; j++){
-            atomicAdd(accessRow(blockSum, bestCentroid, dimensions)+j, point[j]);
-        }
-		atomicAdd(blockCount+bestCentroid, 1);
-	}
-	
-	__syncthreads();
-	
-	//copy local counts to global 
-	if(threadIdx.x==0){
-		for(int i=0; i<numCentroids*dimensions; i++){
-			atomicAdd(newCentroids+i, blockSum[i]);
-		}
-		for(int i=0; i<numCentroids; i++){
-			atomicAdd(pointCounts+i, blockCount[i]);
-		}
-	}
-}
-__global__
-extern void ballotSumCentroids(float* points, float* centroids, float* newCentroids, int* pointCounts, int* labels, int dimensions, int numPoints, int numCentroids){
-	
-	extern __shared__ char sharedMemory[];
-	
-	int sizeOfMemory=numCentroids*dimensions*sizeof(float) + numCentroids*sizeof(int);
-	
-	//zero shared memory
-	for (int i = threadIdx.x; i < sizeOfMemory; i += blockDim.x) 
-	{
-		sharedMemory[i] = 0;
-	}
-	__syncthreads();
-	
-	//get pointers for individual chunks of shared memory
-	float* blockSum= (float*) sharedMemory;
-	int* blockCount=(int*)(blockSum+numCentroids*dimensions);
-	
-	
-	
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-
-	
-	if(i<numPoints){
-		float* point=accessRow(points, i, dimensions);
-		int bestCentroid=deviceFindClosestCentroid(point, centroids, dimensions, numCentroids);
-		
-		for(size_t j=0; j<dimensions; j++){
-            atomicAdd(accessRow(blockSum, bestCentroid, dimensions)+j, point[j]);
-        }
-
-		//assign label
-		labels[i]=bestCentroid;
-		//tally local counts
-		for(int j=0; j<numCentroids; j++){
-			unsigned ballot=__ballot(labels[i]==j);
-			blockCount[j]=__popc(ballot);
-		}
-		__syncthreads();
-	}
-	
-	
-	
-	//copy local counts to global 
-	if(threadIdx.x==0){
-		for(int i=0; i<numCentroids*dimensions; i++){
-			atomicAdd(newCentroids+i, blockSum[i]);
-		}
-		for(int i=0; i<numCentroids; i++){
-			
-			atomicAdd(pointCounts+i, blockCount[i]);
-		}
-	}
-}
-
-__global__
-void divideCentroids(float* points, float* newCentroids, int* pointCounts, int dimensions, int numCentroids, int seed, int numPoints){
-	
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-	
-	if(i<numCentroids){
-		float* centroid=accessRow(newCentroids, dimensions, i);
-		int count=pointCounts[i];
-		
-		if(count==0){
-			for(size_t j=0; j<dimensions; j++){
-				centroid[j]=points[((i+seed)%numPoints)*dimensions+j];
-			}
-		}
-		
-		else {
-			for(size_t j=0; j<dimensions; j++){
-				centroid[j]=centroid[j]/count;
-			}
-		}
-	}
-}
-
-
 
 
 //hashing code
@@ -352,8 +187,6 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     std::memcpy(result, hash, 8*sizeof(uint32_t));
     return;
 }
-static std::atomic_flag lock = ATOMIC_FLAG_INIT;
-static bool done=false;
 __device__
 void incrementNonce(uint32_t* value, uint32_t increment){
      int i=0;
@@ -369,4 +202,40 @@ void incrementNonce(uint32_t* value, uint32_t increment){
                 break;
             }
         }
+}
+
+__global__
+extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
+
+	uint32_t myId= blockIdx.x*blockDim.x + threadIdx.x;
+	uint32_t increment=blockDim.x*gridDim.x;
+
+	int done=0;
+
+	uint32_t nonce[8]={0};
+	nonce[0]=myId;
+
+	uint32_t tempHash[8];
+	while(done==0){
+		hash((char*)nonce, 32, tempHash);
+
+
+        if(((uint16_t*)tempHash)[1]==leadingByte){
+			//if we found a matching value set done
+			int currentVal=atomicExch(&done, 1);
+			//if we got the 0, memcopy our result
+            if(currentVal==0){
+            	std::memcpy(result, nonce, 8*sizeof(uint32_t));
+			}
+        
+        }
+
+        //increment
+       incrementNonce(nonce, increment);
+
+	}
+
+	return;
+	
+
 }
