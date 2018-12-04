@@ -223,7 +223,7 @@ void incrementNonce(uint32_t* value, uint32_t increment){
             }
         }
 }
-void searchForNonceThread(uint8_t leadingByte, uint32_t startingValue, uint32_t increment, uint32_t* result){
+void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t increment, uint32_t* result){
     //allocate 32 bytes for the nonce we are going to hash
     //since we are using SHA 256, the number of possible inputs with 32 bytes is the same as the number of possible hashes
     //there may be some overlap, but we are not looking for an exact hash so it should be reasonable to expect us to find a working nonce
@@ -244,7 +244,7 @@ void searchForNonceThread(uint8_t leadingByte, uint32_t startingValue, uint32_t 
             return;
         }
         else{
-                if(((uint8_t*)tempHash)[3]==leadingByte){
+                if(((uint16_t*)tempHash)[1]==leadingByte){
                     done=true;
                     /*
                     std::cout<<"Found something that hashes to: ";
@@ -268,6 +268,11 @@ void searchForNonceThread(uint8_t leadingByte, uint32_t startingValue, uint32_t 
 
 
 }
+/*
+void searchForNonceGPU(uint16_t leadingByte, uint32_t startingValue, uint32_t threads, uint32_t* result){
+
+}
+*/
 
 int main(int argc, char** argv){
 
