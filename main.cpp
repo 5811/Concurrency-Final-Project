@@ -12,6 +12,7 @@
 #include <thread>
 #include <time.h>
 
+#include <cuda.cpp>
 
 static struct option long_options[]=
                 {
@@ -276,9 +277,9 @@ void searchForNonceGPU(uint16_t leadingByte, uint32_t blocks, uint32_t* result){
 
     cudaMalloc((void**)&gpuResult, 8*sizeof(uint32_t));
 
-    cudaMemcpy(gpuResult, result, 8*sizeof(uint32_t), cudaMemcpyHostToDevice);
-
     searchForNonce<<<blocks, 32>>>(leadingByte, gpuResult);
+
+    cudaMemcpy(result, gpuResult, 8*sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
 }
 
@@ -345,6 +346,10 @@ int main(int argc, char** argv){
 
             break;
         case 3:
+
+            auto start=getGpuTime();
+            searchForNonceGPU(0, workers, (uint32_t*) nonce);
+            timeTaken=(double)getElapsedGpuTime(start);
             break;
 
         default:
