@@ -269,7 +269,7 @@ void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t
 
 }
 
-void searchForNonceGPU(uint16_t leadingByte, uint32_t* result){
+void searchForNonceGPU(uint16_t leadingByte, uint32_t blocks, uint32_t* result){
 
 
     uint32_t* gpuResult;
