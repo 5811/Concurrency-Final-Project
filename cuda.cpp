@@ -222,7 +222,7 @@ extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
 
         if(((uint16_t*)tempHash)[1]==leadingByte){
 			//if we found a matching value set done
-			int currentVal=atomicExch(&done, 1);
+			int currentVal=atomicAdd(&done, 1);
 			//if we got the 0, memcopy our result
             if(currentVal==0){
             	std::memcpy(gpuResult, nonce, 8*sizeof(uint32_t));
