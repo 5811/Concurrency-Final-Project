@@ -41,7 +41,7 @@ uint32_t deviceRightRotate (uint32_t value, uint32_t offset)
 }
 
 
-const uint32_t roundConstants[64] = 
+const uint32_t deviceRoundConstants[64] = 
 {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
     0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -101,7 +101,7 @@ void deviceHashChunk(char* chunk, uint32_t* currentHash){
     for (int i=0; i<64; i++){
         uint32_t S1 = deviceRightRotate(workingVariables[4], 6) ^ deviceRightRotate(workingVariables[4], 11) ^ deviceRightRotate(workingVariables[4], 25);
         uint32_t ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
-        uint32_t temp1 = workingVariables[7] + S1 + ch + roundConstants[i] + scheduleArray[i];
+        uint32_t temp1 = workingVariables[7] + S1 + ch + deviceRoundConstants[i] + scheduleArray[i];
         uint32_t S0 = deviceRightRotate(workingVariables[0] , 2) ^ deviceRightRotate(workingVariables[0] , 13) ^ deviceRightRotate(workingVariables[0] , 22);
         uint32_t maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
         uint32_t temp2 = S0 + maj;
