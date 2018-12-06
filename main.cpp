@@ -57,7 +57,7 @@ uint32_t rightRotate (uint32_t value, uint32_t offset)
   return (value>>offset) | (value<<(-offset&31));
 }
 
-/*
+__constant__
 const uint32_t roundConstants[64] = 
 {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -77,7 +77,7 @@ const uint32_t roundConstants[64] =
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
-*/
+
 //hashes a 512 bit/64 byte chunk
 void hashChunk(char* chunk, uint32_t* currentHash){
     uint32_t scheduleArray[64];
