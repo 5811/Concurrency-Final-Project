@@ -203,22 +203,6 @@ void deviceIncrementNonce(uint32_t* value, uint32_t increment){
             }
         }
 }
-__device__
-void deviceIncrementNonce(uint32_t* value, uint32_t increment){
-     int i=0;
-        while(true){
-            uint32_t temp=i==0? value[i]+increment : value[i]+1;
-            if(temp<value[i]){
-                //overflow, increment i to handle the carry
-                value[i]=temp;
-                i++;
-            }
-            else{
-                value[i]=temp;
-                break;
-            }
-        }
-}
 __global__
 extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
 

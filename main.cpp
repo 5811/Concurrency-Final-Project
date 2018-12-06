@@ -351,7 +351,7 @@ int main(int argc, char** argv){
 
             gpuStart=getGpuTime();
             searchForNonceGPU(0, workers, (uint32_t*) nonce);
-            timeTaken=(double)getElapsedGpuTime(start);
+            timeTaken=(double)getElapsedGpuTime(gpuStart);
             break;
 
         default:
