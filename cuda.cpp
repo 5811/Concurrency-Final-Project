@@ -188,7 +188,7 @@ void deviceHash(const char* input, const uint64_t size, uint32_t* result){
     return;
 }
 __device__
-void incrementNonce(uint32_t* value, uint32_t increment){
+void deviceIncrementNonce(uint32_t* value, uint32_t increment){
      int i=0;
         while(true){
             uint32_t temp=i==0? value[i]+increment : value[i]+1;
@@ -207,9 +207,6 @@ __device__
 void deviceIncrementNonce(uint32_t* value, uint32_t increment){
      int i=0;
         while(true){
-            if(i==8){
-                std::cout<<"Checked all possible 512 bit values! Still no nonce found!"<<std::endl;
-            }
             uint32_t temp=i==0? value[i]+increment : value[i]+1;
             if(temp<value[i]){
                 //overflow, increment i to handle the carry
