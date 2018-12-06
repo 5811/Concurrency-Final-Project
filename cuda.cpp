@@ -40,6 +40,7 @@ uint32_t deviceRightRotate (uint32_t value, uint32_t offset)
   return (value>>offset) | (value<<(-offset&31));
 }
 
+
 const uint32_t roundConstants[64] = 
 {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
