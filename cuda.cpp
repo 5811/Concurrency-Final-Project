@@ -35,7 +35,7 @@ float* accessEntry(float *array, int rowSize, int x, int y){
 //hashing code
 
 __device__
-uint32_t rightRotate (uint32_t value, uint32_t offset)
+uint32_t deviceRightRotate (uint32_t value, uint32_t offset)
 {
   return (value>>offset) | (value<<(-offset&31));
 }
@@ -62,7 +62,7 @@ const uint32_t roundConstants[64] =
 
 //hashes a 512 bit/64 byte chunk
 __device__
-void hashChunk(char* chunk, uint32_t* currentHash){
+void deviceHashChunk(char* chunk, uint32_t* currentHash){
     uint32_t scheduleArray[64];
 
 	/*for (int i = 0; i < 64; i++) {
@@ -85,8 +85,8 @@ void hashChunk(char* chunk, uint32_t* currentHash){
 	#endif
 	
     for(int i= 16; i<64; i++){
-        uint32_t s0 = rightRotate(scheduleArray[i-15], 7) ^ rightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3);
-        uint32_t s1 = rightRotate(scheduleArray[i-2], 17) ^ rightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
+        uint32_t s0 = deviceRightRotate(scheduleArray[i-15], 7) ^ deviceRightRotate(scheduleArray[i-15], 18) ^ (scheduleArray[i-15] >> 3);
+        uint32_t s1 = deviceRightRotate(scheduleArray[i-2], 17) ^ deviceRightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
         scheduleArray[i] = scheduleArray[i-16] + s0 + scheduleArray[i-7] + s1;
     }
 
@@ -98,10 +98,10 @@ void hashChunk(char* chunk, uint32_t* currentHash){
     std::memcpy(workingVariables, currentHash, 32);
 
     for (int i=0; i<64; i++){
-        uint32_t S1 = rightRotate(workingVariables[4], 6) ^ rightRotate(workingVariables[4], 11) ^ rightRotate(workingVariables[4], 25);
+        uint32_t S1 = deviceRightRotate(workingVariables[4], 6) ^ deviceRightRotate(workingVariables[4], 11) ^ deviceRightRotate(workingVariables[4], 25);
         uint32_t ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
         uint32_t temp1 = workingVariables[7] + S1 + ch + roundConstants[i] + scheduleArray[i];
-        uint32_t S0 = rightRotate(workingVariables[0] , 2) ^ rightRotate(workingVariables[0] , 13) ^ rightRotate(workingVariables[0] , 22);
+        uint32_t S0 = deviceRightRotate(workingVariables[0] , 2) ^ deviceRightRotate(workingVariables[0] , 13) ^ deviceRightRotate(workingVariables[0] , 22);
         uint32_t maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
         uint32_t temp2 = S0 + maj;
  
@@ -121,17 +121,17 @@ void hashChunk(char* chunk, uint32_t* currentHash){
 
 }
 __device__
-inline uint32_t ceilingIntDivision(const uint32_t val, const uint32_t mod) { //assert mod != 0, val != 0
+inline uint32_t deviceCeilingIntDivision(const uint32_t val, const uint32_t mod) { //assert mod != 0, val != 0
     return (val + mod - 1) / mod;
 }
 __device__
-inline uint32_t generateProcessSize(const uint32_t inputSize) {
+inline uint32_t deviceGenerateProcessSize(const uint32_t inputSize) {
     uint32_t inputSizeInBits = inputSize * 8;
     uint32_t paddedInBits = inputSizeInBits + 64 + 1;
-    return ceilingIntDivision(paddedInBits, 512) * 512 / 8;
+    return deviceCeilingIntDivision(paddedInBits, 512) * 512 / 8;
 }
 __device__
-inline void writeIntToBufferAsBigEndian(char* start, const uint64_t value) {
+inline void deviceWriteIntToBufferAsBigEndian(char* start, const uint64_t value) {
     *((uint64_t*) start) = value;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     for (unsigned i = 0; i < sizeof(uint64_t) / 2; ++i) {
@@ -146,7 +146,7 @@ inline void writeIntToBufferAsBigEndian(char* start, const uint64_t value) {
 #endif
 }
 __device__
-void hash(const char* input, const uint64_t size, uint32_t* result){
+void deviceHash(const char* input, const uint64_t size, uint32_t* result){
     //initialize hash values
     uint32_t hash[]={
     0x6a09e667, 
@@ -162,7 +162,7 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     //preprocessing
 
     //processedSize is size of padded array in bytes
-    uint32_t processedSize=generateProcessSize(size);
+    uint32_t processedSize=deviceGenerateProcessSize(size);
 
     char* buffer=(char*) malloc(processedSize);
     //copy over input
@@ -171,7 +171,7 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     buffer[size]=0x80;
     std::memset(buffer+size+1, 0, processedSize-size-1-sizeof(uint64_t));
     //append size
-    writeIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size*8);
+    deviceWriteIntToBufferAsBigEndian(buffer+processedSize-sizeof(uint64_t), size*8);
     
 	/*for (int i = 0; i < 64; i++) {
 		std::cout << "Buffer[" << i << "] :" << int(buffer[i]) << std::endl;
@@ -179,7 +179,7 @@ void hash(const char* input, const uint64_t size, uint32_t* result){
     //hash chunks in a loop
     for(uint32_t i=0; i<processedSize/64; i++){
         char* chunkAddress=buffer+(i*64);
-        hashChunk(chunkAddress, hash);
+        deviceHashChunk(chunkAddress, hash);
     }
 
     //free memory we allocated earlier
@@ -203,7 +203,25 @@ void incrementNonce(uint32_t* value, uint32_t increment){
             }
         }
 }
-
+__device__
+void deviceIncrementNonce(uint32_t* value, uint32_t increment){
+     int i=0;
+        while(true){
+            if(i==8){
+                std::cout<<"Checked all possible 512 bit values! Still no nonce found!"<<std::endl;
+            }
+            uint32_t temp=i==0? value[i]+increment : value[i]+1;
+            if(temp<value[i]){
+                //overflow, increment i to handle the carry
+                value[i]=temp;
+                i++;
+            }
+            else{
+                value[i]=temp;
+                break;
+            }
+        }
+}
 __global__
 extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
 
@@ -217,7 +235,7 @@ extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
 
 	uint32_t tempHash[8];
 	while(done==0){
-		hash((char*)nonce, 32, tempHash);
+		deviceHash((char*)nonce, 32, tempHash);
 
 
         if(((uint16_t*)tempHash)[1]==leadingByte){
@@ -225,13 +243,13 @@ extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
 			int currentVal=atomicExch(&done, 1);
 			//if we got the 0, memcopy our result
             if(currentVal==0){
-            	std::memcpy(result, nonce, 8*sizeof(uint32_t));
+            	std::memcpy(gpuResult, nonce, 8*sizeof(uint32_t));
 			}
         
         }
 
         //increment
-       incrementNonce(nonce, increment);
+       deviceIncrementNonce(nonce, increment);
 
 	}
 

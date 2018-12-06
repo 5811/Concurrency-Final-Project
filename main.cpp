@@ -316,6 +316,7 @@ int main(int argc, char** argv){
 
     uint32_t hashResult[8];
     unsigned char nonce[32];
+    double gpuStart;
 
 
     //array of worker threads if we need them
@@ -347,7 +348,7 @@ int main(int argc, char** argv){
             break;
         case 3:
 
-            auto start=getGpuTime();
+            gpuStart=getGpuTime();
             searchForNonceGPU(0, workers, (uint32_t*) nonce);
             timeTaken=(double)getElapsedGpuTime(start);
             break;
