@@ -278,7 +278,14 @@ void searchForNonceGPU(uint16_t leadingByte, uint32_t blocks, uint32_t* result){
 
     cudaMalloc((void**)&gpuResult, 8*sizeof(uint32_t));
 
-    searchForNonce<<<blocks, 32>>>(leadingByte, gpuResult);
+	int *deviceDone;
+
+	cudaMalloc((void**)&deviceDone, sizeof(int));
+	cudaMemcpy(deviceDone,0,sizeof(int),cudaMemcpyHostToDevice); 
+
+    searchForNonce<<<blocks, 32>>>(leadingByte, gpuResult, deviceDone);
+
+	cudaFree(deviceDone);
 
     cudaMemcpy(result, gpuResult, 8*sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
