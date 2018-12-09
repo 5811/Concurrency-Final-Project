@@ -205,26 +205,27 @@ void deviceIncrementNonce(uint32_t* value, uint32_t increment){
         }
 }
 __global__
-extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult){
+extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult,int*done){
 
 	uint32_t myId= blockIdx.x*blockDim.x + threadIdx.x;
 	uint32_t increment=blockDim.x*gridDim.x;
 
-	int done=0;
+	//int done=0;
 
 	uint32_t nonce[8]={0};
 	nonce[0]=myId;
 
 	uint32_t tempHash[8];
-	while(done==0){
+	while((*done)==0){
 		deviceHash((char*)nonce, 32, tempHash);
 
 
         if(((uint16_t*)tempHash)[1]==leadingByte){
 			//if we found a matching value set done
-			int currentVal=atomicAdd(&done, 1);
+			int currentVal=atomicExch(done, 1);
 			//if we got the 0, memcopy our result
             if(currentVal==0){
+
             	std::memcpy(gpuResult, nonce, 8*sizeof(uint32_t));
 			}
         
