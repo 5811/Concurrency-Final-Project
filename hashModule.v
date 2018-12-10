@@ -78,9 +78,9 @@ end
 //insert 1 and pad 0s
 messageSchedule[8]=32'80000000;
 genvar zeroVar;
-for(zeroVar=9; zeroVar<14; zeroVar=zeroVar+1) begin: zeros
-    messageSchedule[zeroVar]=nonce[zeroVar];
-
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    messageSchedule[zeroVar]=0;
+end
 //write in 32 as length into the last 32 bit word
 messageSchedule[15]=32;
 
