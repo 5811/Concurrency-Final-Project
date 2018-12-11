@@ -87,6 +87,7 @@ module hashModule#(
 
 )
 (
+    input wire clk,
     input wire [255:0] flattenedInput,
     output wire [255:0] flattenedOutput
 );
@@ -135,7 +136,7 @@ for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
     assign messageSchedule[wVar]=outputwVar;
 end
 
-wire [255:0] partialHashes [64:0];
+reg [255:0] partialHashes [64:0];
 //initialize our hash array to our default values
 wire [31:0] initialHash[7:0];
 assign initialHash[0] = 32'h6a09e667;
@@ -153,7 +154,9 @@ for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: 
     assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
 end
 
-assign partialHashes[0]=flattenedInitialHash;
+initial begin
+    partialHashes[0]<=flattenedInitialHash;
+end
 
 //apply hashing
 genvar hashVar;
@@ -170,7 +173,9 @@ for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
         flattenedHashOutput
     );
 
-    assign partialHashes[hashVar+1]=flattenedHashOutput;
+    always @(posedge(clk)) begin
+        partialHashes[hashVar+1]<=flattenedHashOutput;
+    end
 end
 
 

@@ -18,6 +18,7 @@ for (index1=0; index1 < 8; index1=index1+1) begin: flatten
     assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
 end
 hashModule m(
+  clock.val,
   flattenedNonce,
   flattenedHash
 );
@@ -27,9 +28,13 @@ for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
     assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
 end
 
+reg [5:0] count = 0;
 always @(posedge clock.val) begin
-  $display("%h", hash[0]);
-  $finish(1);
+  count <= (count + 1);
+  if ((&count)) begin
+    $display("%h", hash[0]);
+    $finish(1);
+  end
 end
 
 
