@@ -28,7 +28,7 @@ static int step=1;
 struct timespec start, end;
 
 void startTimer(){
-    clock_gettime(CLOCK_MONOTONIC, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 }
 double endTimer(){
     clock_gettime(CLOCK_MONOTONIC, &end);
@@ -114,9 +114,11 @@ void hashChunk(char* chunk, uint32_t* currentHash){
 		charScheduleArray[i+2] = chunk[i+1];
 		charScheduleArray[i+3] = chunk[i];
     }
+	
 	/*for (int i = 0; i < 64; i++) {
         std::cout << "Char[" << i << "] :" << int(charScheduleArray[i]) << std::endl;
-    }*/
+    }
+	std::cout << std::endl;*/
 	#endif
 	
     for(int i= 16; i<64; i++){
@@ -124,6 +126,11 @@ void hashChunk(char* chunk, uint32_t* currentHash){
         uint32_t s1 = rightRotate(scheduleArray[i-2], 17) ^ rightRotate(scheduleArray[i-2] , 19) ^ (scheduleArray[i-2] >> 10);
         scheduleArray[i] = scheduleArray[i-16] + s0 + scheduleArray[i-7] + s1;
     }
+
+	/*for (int i = 0; i < 64; i++) {
+        std::cout<<std::hex<<std::setfill('0')<<std::setw(8)<<unsigned(scheduleArray[i]);
+    }
+    std::cout << std::endl;*/
 
 	/*for (int i = 0; i < 64; i++) {
     	std::cout << "Array " << i << " : " << scheduleArray[i] << std::endl;
@@ -151,8 +158,10 @@ void hashChunk(char* chunk, uint32_t* currentHash){
     }
 
     for(int i=0; i<8; i++){
+		//std::cout<<std::hex<<std::setfill('0')<<std::setw(8)<<unsigned(workingVariables[i]);
         currentHash[i]+=workingVariables[i];
     }
+	//std::cout<<std::endl;
 
 }
 
