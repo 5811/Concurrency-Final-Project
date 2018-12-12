@@ -1,0 +1,4573 @@
+STARTUP 0 1544569060
+PARSE 0 1544569060
+// This march file represents the smallest possible runtime interface for
+// cascade.  It instantiates the root and a single software-backed virtual
+// clock.
+
+include data/stdlib/stdlib.v;
+PARSE 0 1544569060
+///////////////////////////////////////////////////////////////////////////////
+//
+// This file contains declarations for the cascade standard library.  The names
+// of these modules are reserved by cascade and cannot be overriden by user
+// programs.  Target-specific backend implementations are expected to provide a
+// march file which instantiates whichever of these modules that backend
+// supports and to provide appropriate annotations for those instantiations.
+// At a minimum, a target-specific implementation must instantiate both the
+// Root and the global clock.
+//
+// All of the modules in the standard library support the following
+// annotations.  Additional module-specific annotations are discussed below.
+//
+// __target = "..." 
+//   Required. Tells the compiler class which core compiler to use.
+// __target2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which core
+//   compiler to use during the second pass compilation.
+// __loc = "..."
+//   Optional. Tells the compiler class which interface compiler to use.  If
+//   not provided, defaults to "runtime", ie in the same process space as the
+//   runtime.
+// __loc2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which
+//   interface compiler to use during the second pass compilation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Minimal Implementation:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level module. Evaluated module items are inserted here.
+(*__std="logic"*)
+module Root(); 
+endmodule
+DECL 0 1544569060
+(*__std = "logic"*) 
+module Root();
+endmodule
+PARSE 0 1544569060
+
+// The top-level virtual clock
+(*__std="clock"*)
+module Clock(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output reg val = 0;
+  // always @(val) begin
+  //  #1; val <= ~val;  
+  // end
+
+endmodule
+DECL 0 1544569060
+(*__std = "clock"*) 
+module Clock(val);
+	output wire val;
+endmodule
+PARSE 0 1544569060
+
+///////////////////////////////////////////////////////////////////////////////
+// Target-Specific Components:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level reset signal
+(*__std="reset"*)
+module Reset(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output wire val = <reset pin>;
+
+endmodule
+DECL 0 1544569060
+(*__std = "reset"*) 
+module Reset(val);
+	output wire val;
+endmodule
+PARSE 0 1544569060
+
+// An arbitrary width source of binary inputs
+(*__std="pad"*)
+module Pad#(
+  parameter WIDTH = 4
+)(
+  output wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // output wire[WIDTH-1:0] val = <pad pins>;
+
+endmodule
+DECL 0 1544569060
+(*__std = "pad"*) 
+module Pad(val);
+	parameter WIDTH = 4;
+	output wire[WIDTH - 1:0] val;
+endmodule
+PARSE 0 1544569060
+
+// An arbitrary width source of binary outputs
+(*__std="led"*)
+module Led#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <led pins> = val;
+
+endmodule
+DECL 0 1544569060
+(*__std = "led"*) 
+module Led(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 0 1544569060
+
+// An arbitrary width source of binary outputs
+(*__std="gpio"*)
+module Gpio#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <gpio pins> = val;
+
+endmodule
+DECL 0 1544569060
+(*__std = "gpio"*) 
+module Gpio(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 0 1544569060
+
+///////////////////////////////////////////////////////////////////////////////
+// Reusable Data-Structures:
+///////////////////////////////////////////////////////////////////////////////
+
+// An dual-port-read single-port-write memory with arbitrary size and byte
+// width.  Supports additional annotations below:
+// 
+// __file = "..."
+//   Optional. If specified the contents of this memory will be read/written
+//   from/to this file when the program begins/finishes executing.
+(*__std="memory",__target="sw"*)
+module Memory#(
+  parameter ADDR_SIZE = 4,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire wen,
+  input  wire[ADDR_SIZE-1:0] raddr1,
+  output wire[BYTE_SIZE-1:0] rdata1,
+  input  wire[ADDR_SIZE-1:0] raddr2,
+  output wire[BYTE_SIZE-1:0] rdata2,
+  input  wire[ADDR_SIZE-1:0] waddr,
+  input  wire[BYTE_SIZE-1:0] wdata
+);
+
+  // Possible Implementation:
+  //
+  // input wire clock;
+  // input wire wen;
+  // input wire[ADDR_SIZE-1:0] raddr1;
+  // input wire[ADDR_SIZE-1:0] raddr2;
+  // input wire[ADDR_SIZE-1:0] waddr;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata1;
+  // output wire[BYTE_SIZE-1:0] rdata2;
+
+  // reg[BYTE_SIZE-1:0] mem[ADDR_SIZE-1:0];
+  // assign rdata1 = mem[raddr1];
+  // assign rdata2 = mem[raddr2];
+  // always @(posedge clock) begin
+  //   if (wen) begin 
+  //     mem[waddr] <= wdata;
+  //   end
+  // end
+
+endmodule
+DECL 0 1544569060
+(*__std = "memory",__target = "sw"*) 
+module Memory(clock,wen,raddr1,rdata1,raddr2,rdata2,waddr,wdata);
+	parameter ADDR_SIZE = 4;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire wen;
+	input wire[ADDR_SIZE - 1:0] raddr1;
+	output wire[BYTE_SIZE - 1:0] rdata1;
+	input wire[ADDR_SIZE - 1:0] raddr2;
+	output wire[BYTE_SIZE - 1:0] rdata2;
+	input wire[ADDR_SIZE - 1:0] waddr;
+	input wire[BYTE_SIZE - 1:0] wdata;
+endmodule
+PARSE 0 1544569060
+
+// A bounded-depth read/write fifo. Supports additional annotations below.
+// Attempting to write a new value into a full fifo or to read a value from
+// an empty fifo will result in undefined behavor.
+//
+// __file = "..."
+//   Optional. If specified this fifo will be initialized with values taken
+//   from this file. If there are more values in this file than the fifo's
+//   maximum depth, this fifo will continue to pull values from the file until
+//   it is exhausted.
+// __count = "..."
+//   Optional. If specifid along with __file, this fifo will be initialized
+//   with 'count' copies of the data in __file.
+(*__std="fifo",__target="sw"*)
+module Fifo#(
+  parameter DEPTH = 8,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire rreq,
+  output wire[BYTE_SIZE-1:0] rdata,
+  input  wire wreq,
+  input  wire[BYTE_SIZE-1:0] wdata,
+  output wire empty,
+  output wire full
+);
+
+  // Possible Implementation:
+  //
+  // input wire rreq;
+  // input wire wreq;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // reg[BYTE_SIZE-1:0] fifo[log(DEPTH)-1:0];
+  // reg[log(DEPTH)-1:0] head = 0;
+  // reg[log(DEPTH)-1:0] tail = 1;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata = fifo[head];
+  // output wire empty = (head+1 == tail) & <file empty>;
+  // output wire full = (head == tail) | !<file empty>;
+  //
+  // initial <fill from file until full or file empty>;
+  //
+  // always @(posedge clock) begin
+  //   if (rreq) begin
+  //     head <= head+1;
+  //   end
+  //   if (wreq) begin 
+  //     fifo[tail] <= wdata;
+  //     tail <= tail+1;
+  //   end
+  //   if (!<file empty>) begin
+  //     fifo[tail] <= <next file data>;
+  //     tail <= tail+1;  
+  //   end
+  // end
+
+endmodule
+DECL 0 1544569060
+(*__std = "fifo",__target = "sw"*) 
+module Fifo(clock,rreq,rdata,wreq,wdata,empty,full);
+	parameter DEPTH = 8;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire rreq;
+	output wire[BYTE_SIZE - 1:0] rdata;
+	input wire wreq;
+	input wire[BYTE_SIZE - 1:0] wdata;
+	output wire empty;
+	output wire full;
+endmodule
+PARSE 0 1544569060
+
+PARSE 0 1544569060
+
+
+(*__target="sw", __loc="runtime"*)
+Root root();
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+endmodule
+PARSE 0 1544569060
+
+
+(*__target="sw", __loc="runtime"*)                    
+Clock clock();
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+endmodule
+PARSE 0 1544569060
+
+
+PARSE 0 1544569060
+include debug.v;
+PARSE 0 1544569060
+include hashModule.v;
+PARSE 0 1544569060
+module MSUnit(
+    input wire [31:0] w15,
+    input wire [31:0] w2,
+    input wire [31:0] w16,
+    input wire [31:0] w7,
+
+    output wire [31:0] w0
+
+);
+    wire [31:0] S0;
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    wire [31:0] S1;
+    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    
+    assign w0=w16+S0+w7+S1;
+
+endmodule
+DECL 0 1544569060
+(*__std = "logic"*) 
+module MSUnit(w15,w2,w16,w7,w0);
+	input wire[31:0] w15;
+	input wire[31:0] w2;
+	input wire[31:0] w16;
+	input wire[31:0] w7;
+	output wire[31:0] w0;
+	wire[31:0] S0;
+	assign S0 = {w15[6:0],w15[31:7]} ^ {w15[17:0],w15[31:17]} ^ {w15 >> 3};
+	wire[31:0] S1;
+	assign S1 = {w2[16:0],w2[31:18]} ^ {w2[18:0],w2[31:19]} ^ {w2 >> 10};
+	assign w0 = w16 + S0 + w7 + S1;
+endmodule
+PARSE 0 1544569060
+
+module hashRound(
+    input wire [255:0] workingInput,
+    input wire [31:0] k,
+    input wire [31:0] w,
+
+    output wire [255:0] workingOutput
+
+);
+
+    wire [31:0] workingVariables[7:0];
+    wire [31:0] nWorkingVariables[7:0];
+    genvar index1;
+    for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+        assign workingVariables[index1] = workingInput[255-32*index1:224-32*index1];
+    end
+
+    wire [31:0] e;
+    assign e=workingVariables[4];
+    wire [31:0] a;
+    assign a=workingVariables[0];
+
+    wire [31:0] S1;
+    assign S1 =  {e[5 : 0], e[31 : 6]} ^ {e[10 : 0], e[31 : 11]} ^ {e[24 : 0], e[31 : 25]};
+    wire [31:0] ch;
+    assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+    wire [31:0] temp1;
+    assign temp1 = workingVariables[7] + S1 + ch + k + w;
+    wire [31:0] S0;
+    assign S0 = {a[1 : 0], a[31 : 2]} ^ {a[12 : 0], a[31 : 13]} ^ {a[21 : 0], a[31 : 22]};
+    wire [31:0] maj;
+    assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+    wire [31:0] temp2;
+    assign temp2 = S0 + maj;
+
+    assign nWorkingVariables[7] = workingVariables[6];
+    assign nWorkingVariables[5] = workingVariables[4];
+    assign nWorkingVariables[4] = workingVariables[3]+ temp1;
+    assign nWorkingVariables[6] = workingVariables[5];
+    assign nWorkingVariables[3] = workingVariables[2];
+    assign nWorkingVariables[2] = workingVariables[1];
+    assign nWorkingVariables[1] = workingVariables[0];
+    assign nWorkingVariables[0] = temp1 + temp2;
+
+    genvar index2;
+    for (index2=0; index2 < 8; index2=index2+1) begin: flatten
+        assign workingOutput[255-32*index2:224-32*index2] = nWorkingVariables[index2];
+    end
+
+
+endmodule
+DECL 0 1544569060
+(*__std = "logic"*) 
+module hashRound(workingInput,k,w,workingOutput);
+	input wire[255:0] workingInput;
+	input wire[31:0] k;
+	input wire[31:0] w;
+	output wire[255:0] workingOutput;
+	wire[31:0] workingVariables[7:0];
+	wire[31:0] nWorkingVariables[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign workingVariables[index1] = workingInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	wire[31:0] e;
+	assign e = workingVariables[4];
+	wire[31:0] a;
+	assign a = workingVariables[0];
+	wire[31:0] S1;
+	assign S1 = {e[5:0],e[31:6]} ^ {e[10:0],e[31:11]} ^ {e[24:0],e[31:25]};
+	wire[31:0] ch;
+	assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~workingVariables[4]) & workingVariables[6]);
+	wire[31:0] temp1;
+	assign temp1 = workingVariables[7] + S1 + ch + k + w;
+	wire[31:0] S0;
+	assign S0 = {a[1:0],a[31:2]} ^ {a[12:0],a[31:13]} ^ {a[21:0],a[31:22]};
+	wire[31:0] maj;
+	assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+	wire[31:0] temp2;
+	assign temp2 = S0 + maj;
+	assign nWorkingVariables[7] = workingVariables[6];
+	assign nWorkingVariables[5] = workingVariables[4];
+	assign nWorkingVariables[4] = workingVariables[3] + temp1;
+	assign nWorkingVariables[6] = workingVariables[5];
+	assign nWorkingVariables[3] = workingVariables[2];
+	assign nWorkingVariables[2] = workingVariables[1];
+	assign nWorkingVariables[1] = workingVariables[0];
+	assign nWorkingVariables[0] = temp1 + temp2;
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : flatten
+		assign workingOutput[255 - 32 * index2:224 - 32 * index2] = nWorkingVariables[index2];
+	end 
+endmodule
+PARSE 0 1544569060
+
+//hashes a nonce that is a 32 byte value
+module hashModule#(
+
+    parameter kflat =
+    {
+    32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,
+    32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,
+    32'he49b69c1,32'hefbe4786,32'h0fc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,
+    32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h06ca6351,32'h14292967,
+    32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,
+    32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,
+    32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,
+    32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2
+    },
+    parameter kSize =64
+
+    //parameter [2047:0]k = 2048'h428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5hd807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174he49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988dah983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca635114292967h27b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85ha2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa070h19a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3h748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2
+
+)
+(
+    input wire clk,
+    input wire [255:0] flattenedInput,
+    output wire [255:0] flattenedOutput
+);
+
+wire [31:0] k [63:0];
+genvar kVar;
+for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
+    assign k[kVar]= ((kflat>>(32*(kSize-kVar-1)))&{32{1'b1}});
+end
+
+
+wire [31:0] messageSchedule[63:0];
+wire [31:0] nonce[7:0];
+genvar index1;
+for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+    assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
+end
+
+//copy nonce
+genvar copyVar;
+for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
+    assign messageSchedule[copyVar]=nonce[copyVar];
+end
+
+//insert 1 and pad 0s
+assign messageSchedule[8]=32'h80000000;
+genvar zeroVar;
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    assign messageSchedule[zeroVar]=0;
+end
+//write in 32 as length into the last 32 bit word
+assign messageSchedule[15]=32;
+
+//rest of the schedule array is generated based on algorithm
+genvar wVar;
+for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
+    wire [31:0] outputwVar;
+
+    MSUnit ms(
+        messageSchedule[wVar-15], messageSchedule[wVar-2],
+        messageSchedule[wVar-16], messageSchedule[wVar-7],
+
+        outputwVar
+    );
+
+    assign messageSchedule[wVar]=outputwVar;
+end
+
+reg [255:0] partialHash;
+//initialize our hash array to our default values
+wire [31:0] initialHash[7:0];
+assign initialHash[0] = 32'h6a09e667;
+assign initialHash[1] = 32'hbb67ae85;
+assign initialHash[2] = 32'h3c6ef372;
+assign initialHash[3] = 32'ha54ff53a;
+assign initialHash[4] = 32'h510e527f;
+assign initialHash[5] = 32'h9b05688c;
+assign initialHash[6] = 32'h1f83d9ab;
+assign initialHash[7] = 32'h5be0cd19;
+
+wire [255:0] flattenedInitialHash;
+genvar initialHashVar;
+for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: initialHashLoop
+    assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
+end
+
+initial begin
+    partialHash=flattenedInitialHash;
+end
+
+//apply hashing
+always @(posedge(clk)) begin
+
+/*
+    wire [255:0] flattenedHashOutput;
+    wire [255:0] flattenedPartialInput=partialHash;
+
+    hashRound hr(
+        flattenedPartialInput,
+        k[hashVar],
+        messageSchedule[hashVar],
+
+        flattenedHashOutput
+    );
+
+    partialHash<=flattenedHashOutput;
+    */
+end
+
+
+assign flattenedOutput=partialHash;
+
+endmodule
+DECL 0 1544569060
+(*__std = "logic"*) 
+module hashModule(clk,flattenedInput,flattenedOutput);
+	parameter kflat = {32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,32'he49b69c1,32'hefbe4786,32'hfc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h6ca6351,32'h14292967,32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2};
+	parameter kSize = 64;
+	input wire clk;
+	input wire[255:0] flattenedInput;
+	output wire[255:0] flattenedOutput;
+	wire[31:0] k[63:0];
+	genvar kVar;
+	for (kVar = 0; kVar < 64; kVar = kVar + 1) begin : kInitialLoop
+		assign k[kVar] = ((kflat >> (32 * (kSize - kVar - 1))) & {32 {1'b1}});
+	end 
+	wire[31:0] messageSchedule[63:0];
+	wire[31:0] nonce[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign nonce[index1] = flattenedInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	genvar copyVar;
+	for (copyVar = 0; copyVar < 8; copyVar = copyVar + 1) begin : copy
+		assign messageSchedule[copyVar] = nonce[copyVar];
+	end 
+	assign messageSchedule[8] = 32'h80000000;
+	genvar zeroVar;
+	for (zeroVar = 9; zeroVar < 15; zeroVar = zeroVar + 1) begin : zeros
+		assign messageSchedule[zeroVar] = 0;
+	end 
+	assign messageSchedule[15] = 32;
+	genvar wVar;
+	for (wVar = 16; wVar < 64; wVar = wVar + 1) begin : scheduleFill
+		wire[31:0] outputwVar;
+		MSUnit ms(messageSchedule[wVar - 15],messageSchedule[wVar - 2],messageSchedule[wVar - 16],messageSchedule[wVar - 7],outputwVar);
+		assign messageSchedule[wVar] = outputwVar;
+	end 
+	reg[255:0] partialHash;
+	wire[31:0] initialHash[7:0];
+	assign initialHash[0] = 32'h6a09e667;
+	assign initialHash[1] = 32'hbb67ae85;
+	assign initialHash[2] = 32'h3c6ef372;
+	assign initialHash[3] = 32'ha54ff53a;
+	assign initialHash[4] = 32'h510e527f;
+	assign initialHash[5] = 32'h9b05688c;
+	assign initialHash[6] = 32'h1f83d9ab;
+	assign initialHash[7] = 32'h5be0cd19;
+	wire[255:0] flattenedInitialHash;
+	genvar initialHashVar;
+	for (initialHashVar = 0; initialHashVar < 8; initialHashVar = initialHashVar + 1) begin : initialHashLoop
+		assign flattenedInitialHash[255 - 32 * initialHashVar:224 - 32 * initialHashVar] = initialHash[initialHashVar];
+	end 
+	initial begin
+		partialHash = flattenedInitialHash;
+	end 
+	always @(posedge (clk)) begin
+	end 
+	assign flattenedOutput = partialHash;
+endmodule
+PARSE 0 1544569060
+
+PARSE 0 1544569060
+
+
+
+wire [31:0] nonce [7:0];
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+endmodule
+PARSE 0 1544569060
+
+wire [31:0] hash [7:0];
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+endmodule
+PARSE 0 1544569060
+
+
+assign nonce[0]=32'h61000000;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+endmodule
+PARSE 0 1544569060
+
+genvar zeroVar;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+endmodule
+PARSE 0 1544569060
+
+for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
+    assign nonce[zeroVar]=0;
+end
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+endmodule
+PARSE 0 1544569060
+
+wire [255:0] flattenedNonce;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+endmodule
+PARSE 0 1544569060
+
+wire [255:0] flattenedHash;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+endmodule
+PARSE 0 1544569060
+
+
+genvar index1;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+endmodule
+PARSE 0 1544569060
+
+for (index1=0; index1 < 8; index1=index1+1) begin: flatten
+    assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
+end
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+endmodule
+PARSE 0 1544569060
+hashModule m(
+  clock.val,
+  flattenedNonce,
+  flattenedHash
+);
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+endmodule
+PARSE 0 1544569060
+
+
+genvar index2;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+endmodule
+PARSE 0 1544569060
+
+for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
+    assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
+end
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+endmodule
+PARSE 0 1544569060
+
+
+reg [5:0] count = 0;
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+endmodule
+PARSE 0 1544569060
+
+
+always @(posedge clock.val) begin
+  count<=(count+1);
+  if(count==0) begin
+    $display("%h", hash[0]);
+    $finish(1);
+  end
+end
+ITEM 0 1544569060
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+	always @(posedge clock.val) begin
+		count <= (count + 1);
+		if (count == 0) begin
+			$display("%h",hash[0]);
+			$finish(1);
+		end 
+	end 
+endmodule
+PARSE 0 1544569060
+
+
+/*
+always @(posedge clock.val) begin
+  $display("%d %d %d %d %d", g.gridScores[0][0], g.gridScores[0][1], g.gridScores[0][2], g.gridScores[0][3], g.gridScores[0][4]);
+  $display("%d %d %d %d %d", g.gridScores[1][0], g.gridScores[1][1], g.gridScores[1][2], g.gridScores[1][3], g.gridScores[1][4]);
+  $display("%d %d %d %d %d", g.gridScores[2][0], g.gridScores[2][1], g.gridScores[2][2], g.gridScores[2][3], g.gridScores[2][4]);
+  $display("%d %d %d %d %d", g.gridScores[3][0], g.gridScores[3][1], g.gridScores[3][2], g.gridScores[3][3], g.gridScores[3][4]);
+  $display("%d %d %d %d %d", g.gridScores[4][0], g.gridScores[4][1], g.gridScores[4][2], g.gridScores[4][3], g.gridScores[4][4]);
+  $display("");
+  
+  count <= (count + 1);
+  if (done | (&count)) begin
+    $display("%d", g.score);
+    $finish(1);
+  end
+end
+*/
+PARSE 0 1544569060
+
+CRASH 1544569060
+STARTUP 0 1544569564
+PARSE 10800 1544569564
+// This march file represents the smallest possible runtime interface for
+// cascade.  It instantiates the root and a single software-backed virtual
+// clock.
+
+include data/stdlib/stdlib.v;
+PARSE 10800 1544569564
+///////////////////////////////////////////////////////////////////////////////
+//
+// This file contains declarations for the cascade standard library.  The names
+// of these modules are reserved by cascade and cannot be overriden by user
+// programs.  Target-specific backend implementations are expected to provide a
+// march file which instantiates whichever of these modules that backend
+// supports and to provide appropriate annotations for those instantiations.
+// At a minimum, a target-specific implementation must instantiate both the
+// Root and the global clock.
+//
+// All of the modules in the standard library support the following
+// annotations.  Additional module-specific annotations are discussed below.
+//
+// __target = "..." 
+//   Required. Tells the compiler class which core compiler to use.
+// __target2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which core
+//   compiler to use during the second pass compilation.
+// __loc = "..."
+//   Optional. Tells the compiler class which interface compiler to use.  If
+//   not provided, defaults to "runtime", ie in the same process space as the
+//   runtime.
+// __loc2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which
+//   interface compiler to use during the second pass compilation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Minimal Implementation:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level module. Evaluated module items are inserted here.
+(*__std="logic"*)
+module Root(); 
+endmodule
+DECL 10800 1544569564
+(*__std = "logic"*) 
+module Root();
+endmodule
+PARSE 10800 1544569564
+
+// The top-level virtual clock
+(*__std="clock"*)
+module Clock(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output reg val = 0;
+  // always @(val) begin
+  //  #1; val <= ~val;  
+  // end
+
+endmodule
+DECL 10800 1544569564
+(*__std = "clock"*) 
+module Clock(val);
+	output wire val;
+endmodule
+PARSE 10800 1544569564
+
+///////////////////////////////////////////////////////////////////////////////
+// Target-Specific Components:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level reset signal
+(*__std="reset"*)
+module Reset(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output wire val = <reset pin>;
+
+endmodule
+DECL 10800 1544569564
+(*__std = "reset"*) 
+module Reset(val);
+	output wire val;
+endmodule
+PARSE 10800 1544569564
+
+// An arbitrary width source of binary inputs
+(*__std="pad"*)
+module Pad#(
+  parameter WIDTH = 4
+)(
+  output wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // output wire[WIDTH-1:0] val = <pad pins>;
+
+endmodule
+DECL 10800 1544569564
+(*__std = "pad"*) 
+module Pad(val);
+	parameter WIDTH = 4;
+	output wire[WIDTH - 1:0] val;
+endmodule
+PARSE 10800 1544569564
+
+// An arbitrary width source of binary outputs
+(*__std="led"*)
+module Led#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <led pins> = val;
+
+endmodule
+DECL 10800 1544569564
+(*__std = "led"*) 
+module Led(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 10800 1544569564
+
+// An arbitrary width source of binary outputs
+(*__std="gpio"*)
+module Gpio#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <gpio pins> = val;
+
+endmodule
+DECL 10800 1544569564
+(*__std = "gpio"*) 
+module Gpio(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 10800 1544569564
+
+///////////////////////////////////////////////////////////////////////////////
+// Reusable Data-Structures:
+///////////////////////////////////////////////////////////////////////////////
+
+// An dual-port-read single-port-write memory with arbitrary size and byte
+// width.  Supports additional annotations below:
+// 
+// __file = "..."
+//   Optional. If specified the contents of this memory will be read/written
+//   from/to this file when the program begins/finishes executing.
+(*__std="memory",__target="sw"*)
+module Memory#(
+  parameter ADDR_SIZE = 4,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire wen,
+  input  wire[ADDR_SIZE-1:0] raddr1,
+  output wire[BYTE_SIZE-1:0] rdata1,
+  input  wire[ADDR_SIZE-1:0] raddr2,
+  output wire[BYTE_SIZE-1:0] rdata2,
+  input  wire[ADDR_SIZE-1:0] waddr,
+  input  wire[BYTE_SIZE-1:0] wdata
+);
+
+  // Possible Implementation:
+  //
+  // input wire clock;
+  // input wire wen;
+  // input wire[ADDR_SIZE-1:0] raddr1;
+  // input wire[ADDR_SIZE-1:0] raddr2;
+  // input wire[ADDR_SIZE-1:0] waddr;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata1;
+  // output wire[BYTE_SIZE-1:0] rdata2;
+
+  // reg[BYTE_SIZE-1:0] mem[ADDR_SIZE-1:0];
+  // assign rdata1 = mem[raddr1];
+  // assign rdata2 = mem[raddr2];
+  // always @(posedge clock) begin
+  //   if (wen) begin 
+  //     mem[waddr] <= wdata;
+  //   end
+  // end
+
+endmodule
+DECL 10800 1544569564
+(*__std = "memory",__target = "sw"*) 
+module Memory(clock,wen,raddr1,rdata1,raddr2,rdata2,waddr,wdata);
+	parameter ADDR_SIZE = 4;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire wen;
+	input wire[ADDR_SIZE - 1:0] raddr1;
+	output wire[BYTE_SIZE - 1:0] rdata1;
+	input wire[ADDR_SIZE - 1:0] raddr2;
+	output wire[BYTE_SIZE - 1:0] rdata2;
+	input wire[ADDR_SIZE - 1:0] waddr;
+	input wire[BYTE_SIZE - 1:0] wdata;
+endmodule
+PARSE 10800 1544569564
+
+// A bounded-depth read/write fifo. Supports additional annotations below.
+// Attempting to write a new value into a full fifo or to read a value from
+// an empty fifo will result in undefined behavor.
+//
+// __file = "..."
+//   Optional. If specified this fifo will be initialized with values taken
+//   from this file. If there are more values in this file than the fifo's
+//   maximum depth, this fifo will continue to pull values from the file until
+//   it is exhausted.
+// __count = "..."
+//   Optional. If specifid along with __file, this fifo will be initialized
+//   with 'count' copies of the data in __file.
+(*__std="fifo",__target="sw"*)
+module Fifo#(
+  parameter DEPTH = 8,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire rreq,
+  output wire[BYTE_SIZE-1:0] rdata,
+  input  wire wreq,
+  input  wire[BYTE_SIZE-1:0] wdata,
+  output wire empty,
+  output wire full
+);
+
+  // Possible Implementation:
+  //
+  // input wire rreq;
+  // input wire wreq;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // reg[BYTE_SIZE-1:0] fifo[log(DEPTH)-1:0];
+  // reg[log(DEPTH)-1:0] head = 0;
+  // reg[log(DEPTH)-1:0] tail = 1;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata = fifo[head];
+  // output wire empty = (head+1 == tail) & <file empty>;
+  // output wire full = (head == tail) | !<file empty>;
+  //
+  // initial <fill from file until full or file empty>;
+  //
+  // always @(posedge clock) begin
+  //   if (rreq) begin
+  //     head <= head+1;
+  //   end
+  //   if (wreq) begin 
+  //     fifo[tail] <= wdata;
+  //     tail <= tail+1;
+  //   end
+  //   if (!<file empty>) begin
+  //     fifo[tail] <= <next file data>;
+  //     tail <= tail+1;  
+  //   end
+  // end
+
+endmodule
+DECL 10800 1544569564
+(*__std = "fifo",__target = "sw"*) 
+module Fifo(clock,rreq,rdata,wreq,wdata,empty,full);
+	parameter DEPTH = 8;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire rreq;
+	output wire[BYTE_SIZE - 1:0] rdata;
+	input wire wreq;
+	input wire[BYTE_SIZE - 1:0] wdata;
+	output wire empty;
+	output wire full;
+endmodule
+PARSE 10800 1544569564
+
+PARSE 10800 1544569564
+
+
+(*__target="sw", __loc="runtime"*)
+Root root();
+ITEM 10800 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+endmodule
+PARSE 10800 1544569564
+
+
+(*__target="sw", __loc="runtime"*)                    
+Clock clock();
+ITEM 10800 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+endmodule
+PARSE 10800 1544569564
+
+
+PARSE 11157 1544569564
+include debug.v;
+PARSE 11157 1544569564
+include hashModule.v;
+PARSE 11157 1544569564
+module MSUnit(
+    input wire [31:0] w15,
+    input wire [31:0] w2,
+    input wire [31:0] w16,
+    input wire [31:0] w7,
+
+    output wire [31:0] w0
+
+);
+    wire [31:0] S0;
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    wire [31:0] S1;
+    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    
+    assign w0=w16+S0+w7+S1;
+
+endmodule
+DECL 11157 1544569564
+(*__std = "logic"*) 
+module MSUnit(w15,w2,w16,w7,w0);
+	input wire[31:0] w15;
+	input wire[31:0] w2;
+	input wire[31:0] w16;
+	input wire[31:0] w7;
+	output wire[31:0] w0;
+	wire[31:0] S0;
+	assign S0 = {w15[6:0],w15[31:7]} ^ {w15[17:0],w15[31:17]} ^ {w15 >> 3};
+	wire[31:0] S1;
+	assign S1 = {w2[16:0],w2[31:18]} ^ {w2[18:0],w2[31:19]} ^ {w2 >> 10};
+	assign w0 = w16 + S0 + w7 + S1;
+endmodule
+PARSE 11157 1544569564
+
+module hashRound(
+    input wire [255:0] workingInput,
+    input wire [31:0] k,
+    input wire [31:0] w,
+
+    output wire [255:0] workingOutput
+
+);
+
+    wire [31:0] workingVariables[7:0];
+    wire [31:0] nWorkingVariables[7:0];
+    genvar index1;
+    for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+        assign workingVariables[index1] = workingInput[255-32*index1:224-32*index1];
+    end
+
+    wire [31:0] e;
+    assign e=workingVariables[4];
+    wire [31:0] a;
+    assign a=workingVariables[0];
+
+    wire [31:0] S1;
+    assign S1 =  {e[5 : 0], e[31 : 6]} ^ {e[10 : 0], e[31 : 11]} ^ {e[24 : 0], e[31 : 25]};
+    wire [31:0] ch;
+    assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+    wire [31:0] temp1;
+    assign temp1 = workingVariables[7] + S1 + ch + k + w;
+    wire [31:0] S0;
+    assign S0 = {a[1 : 0], a[31 : 2]} ^ {a[12 : 0], a[31 : 13]} ^ {a[21 : 0], a[31 : 22]};
+    wire [31:0] maj;
+    assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+    wire [31:0] temp2;
+    assign temp2 = S0 + maj;
+
+    assign nWorkingVariables[7] = workingVariables[6];
+    assign nWorkingVariables[5] = workingVariables[4];
+    assign nWorkingVariables[4] = workingVariables[3]+ temp1;
+    assign nWorkingVariables[6] = workingVariables[5];
+    assign nWorkingVariables[3] = workingVariables[2];
+    assign nWorkingVariables[2] = workingVariables[1];
+    assign nWorkingVariables[1] = workingVariables[0];
+    assign nWorkingVariables[0] = temp1 + temp2;
+
+    genvar index2;
+    for (index2=0; index2 < 8; index2=index2+1) begin: flatten
+        assign workingOutput[255-32*index2:224-32*index2] = nWorkingVariables[index2];
+    end
+
+
+endmodule
+DECL 11157 1544569564
+(*__std = "logic"*) 
+module hashRound(workingInput,k,w,workingOutput);
+	input wire[255:0] workingInput;
+	input wire[31:0] k;
+	input wire[31:0] w;
+	output wire[255:0] workingOutput;
+	wire[31:0] workingVariables[7:0];
+	wire[31:0] nWorkingVariables[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign workingVariables[index1] = workingInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	wire[31:0] e;
+	assign e = workingVariables[4];
+	wire[31:0] a;
+	assign a = workingVariables[0];
+	wire[31:0] S1;
+	assign S1 = {e[5:0],e[31:6]} ^ {e[10:0],e[31:11]} ^ {e[24:0],e[31:25]};
+	wire[31:0] ch;
+	assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~workingVariables[4]) & workingVariables[6]);
+	wire[31:0] temp1;
+	assign temp1 = workingVariables[7] + S1 + ch + k + w;
+	wire[31:0] S0;
+	assign S0 = {a[1:0],a[31:2]} ^ {a[12:0],a[31:13]} ^ {a[21:0],a[31:22]};
+	wire[31:0] maj;
+	assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+	wire[31:0] temp2;
+	assign temp2 = S0 + maj;
+	assign nWorkingVariables[7] = workingVariables[6];
+	assign nWorkingVariables[5] = workingVariables[4];
+	assign nWorkingVariables[4] = workingVariables[3] + temp1;
+	assign nWorkingVariables[6] = workingVariables[5];
+	assign nWorkingVariables[3] = workingVariables[2];
+	assign nWorkingVariables[2] = workingVariables[1];
+	assign nWorkingVariables[1] = workingVariables[0];
+	assign nWorkingVariables[0] = temp1 + temp2;
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : flatten
+		assign workingOutput[255 - 32 * index2:224 - 32 * index2] = nWorkingVariables[index2];
+	end 
+endmodule
+PARSE 11157 1544569564
+
+//hashes a nonce that is a 32 byte value
+module hashModule#(
+
+    parameter kflat =
+    {
+    32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,
+    32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,
+    32'he49b69c1,32'hefbe4786,32'h0fc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,
+    32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h06ca6351,32'h14292967,
+    32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,
+    32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,
+    32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,
+    32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2
+    },
+    parameter kSize =64
+
+    //parameter [2047:0]k = 2048'h428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5hd807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174he49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988dah983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca635114292967h27b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85ha2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa070h19a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3h748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2
+
+)
+(
+    input wire clk,
+    input wire [255:0] flattenedInput,
+    output wire [255:0] flattenedOutput
+);
+
+wire [31:0] k [63:0];
+genvar kVar;
+for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
+    assign k[kVar]= ((kflat>>(32*(kSize-kVar-1)))&{32{1'b1}});
+end
+
+
+wire [31:0] messageSchedule[63:0];
+wire [31:0] nonce[7:0];
+genvar index1;
+for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+    assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
+end
+
+//copy nonce
+genvar copyVar;
+for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
+    assign messageSchedule[copyVar]=nonce[copyVar];
+end
+
+//insert 1 and pad 0s
+assign messageSchedule[8]=32'h80000000;
+genvar zeroVar;
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    assign messageSchedule[zeroVar]=0;
+end
+//write in 32 as length into the last 32 bit word
+assign messageSchedule[15]=32;
+
+//rest of the schedule array is generated based on algorithm
+genvar wVar;
+for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
+    wire [31:0] outputwVar;
+
+    MSUnit ms(
+        messageSchedule[wVar-15], messageSchedule[wVar-2],
+        messageSchedule[wVar-16], messageSchedule[wVar-7],
+
+        outputwVar
+    );
+
+    assign messageSchedule[wVar]=outputwVar;
+end
+
+reg [255:0] partialHash;
+//initialize our hash array to our default values
+wire [31:0] initialHash[7:0];
+assign initialHash[0] = 32'h6a09e667;
+assign initialHash[1] = 32'hbb67ae85;
+assign initialHash[2] = 32'h3c6ef372;
+assign initialHash[3] = 32'ha54ff53a;
+assign initialHash[4] = 32'h510e527f;
+assign initialHash[5] = 32'h9b05688c;
+assign initialHash[6] = 32'h1f83d9ab;
+assign initialHash[7] = 32'h5be0cd19;
+
+wire [255:0] flattenedInitialHash;
+genvar initialHashVar;
+for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: initialHashLoop
+    assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
+end
+
+initial begin
+    partialHash=flattenedInitialHash;
+end
+
+wire [255:0] flattenedHashOutput;
+wire [255:0] flattenedPartialInput=partialHash;
+
+hashRound hr(
+    flattenedPartialInput,
+    k[hashVar],
+    messageSchedule[hashVar],
+
+    flattenedHashOutput
+);
+
+//apply hashing
+always @(posedge(clk)) begin
+    partialHash<=flattenedHashOutput;
+end
+
+
+assign flattenedOutput=partialHash;
+
+endmodule
+DECL 11157 1544569564
+(*__std = "logic"*) 
+module hashModule(clk,flattenedInput,flattenedOutput);
+	parameter kflat = {32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,32'he49b69c1,32'hefbe4786,32'hfc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h6ca6351,32'h14292967,32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2};
+	parameter kSize = 64;
+	input wire clk;
+	input wire[255:0] flattenedInput;
+	output wire[255:0] flattenedOutput;
+	wire[31:0] k[63:0];
+	genvar kVar;
+	for (kVar = 0; kVar < 64; kVar = kVar + 1) begin : kInitialLoop
+		assign k[kVar] = ((kflat >> (32 * (kSize - kVar - 1))) & {32 {1'b1}});
+	end 
+	wire[31:0] messageSchedule[63:0];
+	wire[31:0] nonce[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign nonce[index1] = flattenedInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	genvar copyVar;
+	for (copyVar = 0; copyVar < 8; copyVar = copyVar + 1) begin : copy
+		assign messageSchedule[copyVar] = nonce[copyVar];
+	end 
+	assign messageSchedule[8] = 32'h80000000;
+	genvar zeroVar;
+	for (zeroVar = 9; zeroVar < 15; zeroVar = zeroVar + 1) begin : zeros
+		assign messageSchedule[zeroVar] = 0;
+	end 
+	assign messageSchedule[15] = 32;
+	genvar wVar;
+	for (wVar = 16; wVar < 64; wVar = wVar + 1) begin : scheduleFill
+		wire[31:0] outputwVar;
+		MSUnit ms(messageSchedule[wVar - 15],messageSchedule[wVar - 2],messageSchedule[wVar - 16],messageSchedule[wVar - 7],outputwVar);
+		assign messageSchedule[wVar] = outputwVar;
+	end 
+	reg[255:0] partialHash;
+	wire[31:0] initialHash[7:0];
+	assign initialHash[0] = 32'h6a09e667;
+	assign initialHash[1] = 32'hbb67ae85;
+	assign initialHash[2] = 32'h3c6ef372;
+	assign initialHash[3] = 32'ha54ff53a;
+	assign initialHash[4] = 32'h510e527f;
+	assign initialHash[5] = 32'h9b05688c;
+	assign initialHash[6] = 32'h1f83d9ab;
+	assign initialHash[7] = 32'h5be0cd19;
+	wire[255:0] flattenedInitialHash;
+	genvar initialHashVar;
+	for (initialHashVar = 0; initialHashVar < 8; initialHashVar = initialHashVar + 1) begin : initialHashLoop
+		assign flattenedInitialHash[255 - 32 * initialHashVar:224 - 32 * initialHashVar] = initialHash[initialHashVar];
+	end 
+	initial begin
+		partialHash = flattenedInitialHash;
+	end 
+	wire[255:0] flattenedHashOutput;
+	wire[255:0] flattenedPartialInput;
+	assign flattenedPartialInput = partialHash;
+	hashRound hr(flattenedPartialInput,k[hashVar],messageSchedule[hashVar],flattenedHashOutput);
+	always @(posedge (clk)) begin
+		partialHash <= flattenedHashOutput;
+	end 
+	assign flattenedOutput = partialHash;
+endmodule
+PARSE 11157 1544569564
+
+PARSE 11157 1544569564
+
+
+
+wire [31:0] nonce [7:0];
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+endmodule
+PARSE 11157 1544569564
+
+wire [31:0] hash [7:0];
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+endmodule
+PARSE 11157 1544569564
+
+
+assign nonce[0]=32'h61000000;
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+endmodule
+PARSE 11157 1544569564
+
+genvar zeroVar;
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+endmodule
+PARSE 11157 1544569564
+
+for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
+    assign nonce[zeroVar]=0;
+end
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+endmodule
+PARSE 11157 1544569564
+
+wire [255:0] flattenedNonce;
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+endmodule
+PARSE 11157 1544569564
+
+wire [255:0] flattenedHash;
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+endmodule
+PARSE 11157 1544569564
+
+
+genvar index1;
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+endmodule
+PARSE 11157 1544569564
+
+for (index1=0; index1 < 8; index1=index1+1) begin: flatten
+    assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
+end
+ITEM 11157 1544569564
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+endmodule
+PARSE 11157 1544569564
+hashModule m(
+  clock.val,
+  flattenedNonce,
+  flattenedHash
+);
+WARN 11157 1544569564
+*** Typechecker Warning:
+  > In hashModule.v on line 164:
+    Found reference to unresolvable identifier. This may result in an error during instantiation.: hashVar
+  > In hashModule.v on line 165:
+    Found reference to unresolvable identifier. This may result in an error during instantiation.: hashVar
+ERROR 11157 1544569564
+*** Typechecker Error:
+  > In hashModule.v on line 164:
+    Found reference to an unresolvable identifier: hashVar
+  > In hashModule.v on line 165:
+    Found reference to an unresolvable identifier: hashVar
+ERROR 31197188274 1544569774
+User Interrupt:
+  > Caught Ctrl-C.
+SHUTDOWN 31197188276 1544569774
+STARTUP 0 1544570305
+PARSE 3768 1544570305
+// This march file represents the smallest possible runtime interface for
+// cascade.  It instantiates the root and a single software-backed virtual
+// clock.
+
+include data/stdlib/stdlib.v;
+PARSE 3768 1544570305
+///////////////////////////////////////////////////////////////////////////////
+//
+// This file contains declarations for the cascade standard library.  The names
+// of these modules are reserved by cascade and cannot be overriden by user
+// programs.  Target-specific backend implementations are expected to provide a
+// march file which instantiates whichever of these modules that backend
+// supports and to provide appropriate annotations for those instantiations.
+// At a minimum, a target-specific implementation must instantiate both the
+// Root and the global clock.
+//
+// All of the modules in the standard library support the following
+// annotations.  Additional module-specific annotations are discussed below.
+//
+// __target = "..." 
+//   Required. Tells the compiler class which core compiler to use.
+// __target2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which core
+//   compiler to use during the second pass compilation.
+// __loc = "..."
+//   Optional. Tells the compiler class which interface compiler to use.  If
+//   not provided, defaults to "runtime", ie in the same process space as the
+//   runtime.
+// __loc2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which
+//   interface compiler to use during the second pass compilation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Minimal Implementation:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level module. Evaluated module items are inserted here.
+(*__std="logic"*)
+module Root(); 
+endmodule
+DECL 3768 1544570305
+(*__std = "logic"*) 
+module Root();
+endmodule
+PARSE 3768 1544570305
+
+// The top-level virtual clock
+(*__std="clock"*)
+module Clock(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output reg val = 0;
+  // always @(val) begin
+  //  #1; val <= ~val;  
+  // end
+
+endmodule
+DECL 3768 1544570305
+(*__std = "clock"*) 
+module Clock(val);
+	output wire val;
+endmodule
+PARSE 3768 1544570305
+
+///////////////////////////////////////////////////////////////////////////////
+// Target-Specific Components:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level reset signal
+(*__std="reset"*)
+module Reset(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output wire val = <reset pin>;
+
+endmodule
+DECL 3768 1544570305
+(*__std = "reset"*) 
+module Reset(val);
+	output wire val;
+endmodule
+PARSE 3768 1544570305
+
+// An arbitrary width source of binary inputs
+(*__std="pad"*)
+module Pad#(
+  parameter WIDTH = 4
+)(
+  output wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // output wire[WIDTH-1:0] val = <pad pins>;
+
+endmodule
+DECL 3768 1544570305
+(*__std = "pad"*) 
+module Pad(val);
+	parameter WIDTH = 4;
+	output wire[WIDTH - 1:0] val;
+endmodule
+PARSE 3768 1544570305
+
+// An arbitrary width source of binary outputs
+(*__std="led"*)
+module Led#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <led pins> = val;
+
+endmodule
+DECL 3768 1544570305
+(*__std = "led"*) 
+module Led(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 3768 1544570305
+
+// An arbitrary width source of binary outputs
+(*__std="gpio"*)
+module Gpio#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <gpio pins> = val;
+
+endmodule
+DECL 3768 1544570305
+(*__std = "gpio"*) 
+module Gpio(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 3768 1544570305
+
+///////////////////////////////////////////////////////////////////////////////
+// Reusable Data-Structures:
+///////////////////////////////////////////////////////////////////////////////
+
+// An dual-port-read single-port-write memory with arbitrary size and byte
+// width.  Supports additional annotations below:
+// 
+// __file = "..."
+//   Optional. If specified the contents of this memory will be read/written
+//   from/to this file when the program begins/finishes executing.
+(*__std="memory",__target="sw"*)
+module Memory#(
+  parameter ADDR_SIZE = 4,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire wen,
+  input  wire[ADDR_SIZE-1:0] raddr1,
+  output wire[BYTE_SIZE-1:0] rdata1,
+  input  wire[ADDR_SIZE-1:0] raddr2,
+  output wire[BYTE_SIZE-1:0] rdata2,
+  input  wire[ADDR_SIZE-1:0] waddr,
+  input  wire[BYTE_SIZE-1:0] wdata
+);
+
+  // Possible Implementation:
+  //
+  // input wire clock;
+  // input wire wen;
+  // input wire[ADDR_SIZE-1:0] raddr1;
+  // input wire[ADDR_SIZE-1:0] raddr2;
+  // input wire[ADDR_SIZE-1:0] waddr;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata1;
+  // output wire[BYTE_SIZE-1:0] rdata2;
+
+  // reg[BYTE_SIZE-1:0] mem[ADDR_SIZE-1:0];
+  // assign rdata1 = mem[raddr1];
+  // assign rdata2 = mem[raddr2];
+  // always @(posedge clock) begin
+  //   if (wen) begin 
+  //     mem[waddr] <= wdata;
+  //   end
+  // end
+
+endmodule
+DECL 3768 1544570305
+(*__std = "memory",__target = "sw"*) 
+module Memory(clock,wen,raddr1,rdata1,raddr2,rdata2,waddr,wdata);
+	parameter ADDR_SIZE = 4;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire wen;
+	input wire[ADDR_SIZE - 1:0] raddr1;
+	output wire[BYTE_SIZE - 1:0] rdata1;
+	input wire[ADDR_SIZE - 1:0] raddr2;
+	output wire[BYTE_SIZE - 1:0] rdata2;
+	input wire[ADDR_SIZE - 1:0] waddr;
+	input wire[BYTE_SIZE - 1:0] wdata;
+endmodule
+PARSE 3768 1544570305
+
+// A bounded-depth read/write fifo. Supports additional annotations below.
+// Attempting to write a new value into a full fifo or to read a value from
+// an empty fifo will result in undefined behavor.
+//
+// __file = "..."
+//   Optional. If specified this fifo will be initialized with values taken
+//   from this file. If there are more values in this file than the fifo's
+//   maximum depth, this fifo will continue to pull values from the file until
+//   it is exhausted.
+// __count = "..."
+//   Optional. If specifid along with __file, this fifo will be initialized
+//   with 'count' copies of the data in __file.
+(*__std="fifo",__target="sw"*)
+module Fifo#(
+  parameter DEPTH = 8,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire rreq,
+  output wire[BYTE_SIZE-1:0] rdata,
+  input  wire wreq,
+  input  wire[BYTE_SIZE-1:0] wdata,
+  output wire empty,
+  output wire full
+);
+
+  // Possible Implementation:
+  //
+  // input wire rreq;
+  // input wire wreq;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // reg[BYTE_SIZE-1:0] fifo[log(DEPTH)-1:0];
+  // reg[log(DEPTH)-1:0] head = 0;
+  // reg[log(DEPTH)-1:0] tail = 1;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata = fifo[head];
+  // output wire empty = (head+1 == tail) & <file empty>;
+  // output wire full = (head == tail) | !<file empty>;
+  //
+  // initial <fill from file until full or file empty>;
+  //
+  // always @(posedge clock) begin
+  //   if (rreq) begin
+  //     head <= head+1;
+  //   end
+  //   if (wreq) begin 
+  //     fifo[tail] <= wdata;
+  //     tail <= tail+1;
+  //   end
+  //   if (!<file empty>) begin
+  //     fifo[tail] <= <next file data>;
+  //     tail <= tail+1;  
+  //   end
+  // end
+
+endmodule
+DECL 3768 1544570305
+(*__std = "fifo",__target = "sw"*) 
+module Fifo(clock,rreq,rdata,wreq,wdata,empty,full);
+	parameter DEPTH = 8;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire rreq;
+	output wire[BYTE_SIZE - 1:0] rdata;
+	input wire wreq;
+	input wire[BYTE_SIZE - 1:0] wdata;
+	output wire empty;
+	output wire full;
+endmodule
+PARSE 3768 1544570305
+
+PARSE 3768 1544570305
+
+
+(*__target="sw", __loc="runtime"*)
+Root root();
+ITEM 3768 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+endmodule
+PARSE 3768 1544570305
+
+
+(*__target="sw", __loc="runtime"*)                    
+Clock clock();
+ITEM 3768 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+endmodule
+PARSE 3768 1544570305
+
+
+PARSE 4188 1544570305
+include debug.v;
+PARSE 4188 1544570305
+include hashModule.v;
+PARSE 4188 1544570305
+module MSUnit(
+    input wire [31:0] w15,
+    input wire [31:0] w2,
+    input wire [31:0] w16,
+    input wire [31:0] w7,
+
+    output wire [31:0] w0
+
+);
+    wire [31:0] S0;
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    wire [31:0] S1;
+    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    
+    assign w0=w16+S0+w7+S1;
+
+endmodule
+DECL 4188 1544570305
+(*__std = "logic"*) 
+module MSUnit(w15,w2,w16,w7,w0);
+	input wire[31:0] w15;
+	input wire[31:0] w2;
+	input wire[31:0] w16;
+	input wire[31:0] w7;
+	output wire[31:0] w0;
+	wire[31:0] S0;
+	assign S0 = {w15[6:0],w15[31:7]} ^ {w15[17:0],w15[31:17]} ^ {w15 >> 3};
+	wire[31:0] S1;
+	assign S1 = {w2[16:0],w2[31:18]} ^ {w2[18:0],w2[31:19]} ^ {w2 >> 10};
+	assign w0 = w16 + S0 + w7 + S1;
+endmodule
+PARSE 4188 1544570305
+
+module hashRound(
+    input wire [255:0] workingInput,
+    input wire [31:0] k,
+    input wire [31:0] w,
+
+    output wire [255:0] workingOutput
+
+);
+
+    wire [31:0] workingVariables[7:0];
+    wire [31:0] nWorkingVariables[7:0];
+    genvar index1;
+    for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+        assign workingVariables[index1] = workingInput[255-32*index1:224-32*index1];
+    end
+
+    wire [31:0] e;
+    assign e=workingVariables[4];
+    wire [31:0] a;
+    assign a=workingVariables[0];
+
+    wire [31:0] S1;
+    assign S1 =  {e[5 : 0], e[31 : 6]} ^ {e[10 : 0], e[31 : 11]} ^ {e[24 : 0], e[31 : 25]};
+    wire [31:0] ch;
+    assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+    wire [31:0] temp1;
+    assign temp1 = workingVariables[7] + S1 + ch + k + w;
+    wire [31:0] S0;
+    assign S0 = {a[1 : 0], a[31 : 2]} ^ {a[12 : 0], a[31 : 13]} ^ {a[21 : 0], a[31 : 22]};
+    wire [31:0] maj;
+    assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+    wire [31:0] temp2;
+    assign temp2 = S0 + maj;
+
+    assign nWorkingVariables[7] = workingVariables[6];
+    assign nWorkingVariables[5] = workingVariables[4];
+    assign nWorkingVariables[4] = workingVariables[3]+ temp1;
+    assign nWorkingVariables[6] = workingVariables[5];
+    assign nWorkingVariables[3] = workingVariables[2];
+    assign nWorkingVariables[2] = workingVariables[1];
+    assign nWorkingVariables[1] = workingVariables[0];
+    assign nWorkingVariables[0] = temp1 + temp2;
+
+    genvar index2;
+    for (index2=0; index2 < 8; index2=index2+1) begin: flatten
+        assign workingOutput[255-32*index2:224-32*index2] = nWorkingVariables[index2];
+    end
+
+
+endmodule
+DECL 4188 1544570305
+(*__std = "logic"*) 
+module hashRound(workingInput,k,w,workingOutput);
+	input wire[255:0] workingInput;
+	input wire[31:0] k;
+	input wire[31:0] w;
+	output wire[255:0] workingOutput;
+	wire[31:0] workingVariables[7:0];
+	wire[31:0] nWorkingVariables[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign workingVariables[index1] = workingInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	wire[31:0] e;
+	assign e = workingVariables[4];
+	wire[31:0] a;
+	assign a = workingVariables[0];
+	wire[31:0] S1;
+	assign S1 = {e[5:0],e[31:6]} ^ {e[10:0],e[31:11]} ^ {e[24:0],e[31:25]};
+	wire[31:0] ch;
+	assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~workingVariables[4]) & workingVariables[6]);
+	wire[31:0] temp1;
+	assign temp1 = workingVariables[7] + S1 + ch + k + w;
+	wire[31:0] S0;
+	assign S0 = {a[1:0],a[31:2]} ^ {a[12:0],a[31:13]} ^ {a[21:0],a[31:22]};
+	wire[31:0] maj;
+	assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+	wire[31:0] temp2;
+	assign temp2 = S0 + maj;
+	assign nWorkingVariables[7] = workingVariables[6];
+	assign nWorkingVariables[5] = workingVariables[4];
+	assign nWorkingVariables[4] = workingVariables[3] + temp1;
+	assign nWorkingVariables[6] = workingVariables[5];
+	assign nWorkingVariables[3] = workingVariables[2];
+	assign nWorkingVariables[2] = workingVariables[1];
+	assign nWorkingVariables[1] = workingVariables[0];
+	assign nWorkingVariables[0] = temp1 + temp2;
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : flatten
+		assign workingOutput[255 - 32 * index2:224 - 32 * index2] = nWorkingVariables[index2];
+	end 
+endmodule
+PARSE 4188 1544570305
+
+//hashes a nonce that is a 32 byte value
+module hashModule#(
+
+    parameter kflat =
+    {
+    32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,
+    32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,
+    32'he49b69c1,32'hefbe4786,32'h0fc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,
+    32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h06ca6351,32'h14292967,
+    32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,
+    32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,
+    32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,
+    32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2
+    },
+    parameter kSize =64
+
+    //parameter [2047:0]k = 2048'h428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5hd807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174he49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988dah983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca635114292967h27b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85ha2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa070h19a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3h748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2
+
+)
+(
+    input wire clk,
+    input wire [255:0] flattenedInput,
+    output wire [255:0] flattenedOutput
+);
+
+wire [31:0] k [63:0];
+genvar kVar;
+for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
+    assign k[kVar]= ((kflat>>(32*(kSize-kVar-1)))&{32{1'b1}});
+end
+
+
+wire [31:0] messageSchedule[63:0];
+wire [31:0] nonce[7:0];
+genvar index1;
+for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+    assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
+end
+
+//copy nonce
+genvar copyVar;
+for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
+    assign messageSchedule[copyVar]=nonce[copyVar];
+end
+
+//insert 1 and pad 0s
+assign messageSchedule[8]=32'h80000000;
+genvar zeroVar;
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    assign messageSchedule[zeroVar]=0;
+end
+//write in 32 as length into the last 32 bit word
+assign messageSchedule[15]=32;
+
+//rest of the schedule array is generated based on algorithm
+genvar wVar;
+for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
+    wire [31:0] outputwVar;
+
+    MSUnit ms(
+        messageSchedule[wVar-15], messageSchedule[wVar-2],
+        messageSchedule[wVar-16], messageSchedule[wVar-7],
+
+        outputwVar
+    );
+
+    assign messageSchedule[wVar]=outputwVar;
+end
+
+reg [255:0] partialHashes [64:0];
+//initialize our hash array to our default values
+wire [31:0] initialHash[7:0];
+assign initialHash[0] = 32'h6a09e667;
+assign initialHash[1] = 32'hbb67ae85;
+assign initialHash[2] = 32'h3c6ef372;
+assign initialHash[3] = 32'ha54ff53a;
+assign initialHash[4] = 32'h510e527f;
+assign initialHash[5] = 32'h9b05688c;
+assign initialHash[6] = 32'h1f83d9ab;
+assign initialHash[7] = 32'h5be0cd19;
+
+wire [255:0] flattenedInitialHash;
+genvar initialHashVar;
+for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: initialHashLoop
+    assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
+end
+
+initial begin
+    partialHashes[0]<=flattenedInitialHash;
+end
+
+//apply hashing
+genvar hashVar;
+for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
+    wire [31:0] hashOutput [7: 0];
+    wire [255:0] flattenedHashOutput;
+    wire [255:0] flattenedPartialInput=partialHashes[hashVar];
+
+    hashRound hr(
+        flattenedPartialInput,
+        k[hashVar],
+        messageSchedule[hashVar],
+
+        flattenedHashOutput
+    );
+
+    always @(posedge(clk)) begin
+        partialHashes[hashVar+1]<=flattenedHashOutput;
+    end
+end
+
+
+assign flattenedOutput=partialHashes[64];
+
+endmodule
+DECL 4188 1544570305
+(*__std = "logic"*) 
+module hashModule(clk,flattenedInput,flattenedOutput);
+	parameter kflat = {32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,32'he49b69c1,32'hefbe4786,32'hfc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h6ca6351,32'h14292967,32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2};
+	parameter kSize = 64;
+	input wire clk;
+	input wire[255:0] flattenedInput;
+	output wire[255:0] flattenedOutput;
+	wire[31:0] k[63:0];
+	genvar kVar;
+	for (kVar = 0; kVar < 64; kVar = kVar + 1) begin : kInitialLoop
+		assign k[kVar] = ((kflat >> (32 * (kSize - kVar - 1))) & {32 {1'b1}});
+	end 
+	wire[31:0] messageSchedule[63:0];
+	wire[31:0] nonce[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign nonce[index1] = flattenedInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	genvar copyVar;
+	for (copyVar = 0; copyVar < 8; copyVar = copyVar + 1) begin : copy
+		assign messageSchedule[copyVar] = nonce[copyVar];
+	end 
+	assign messageSchedule[8] = 32'h80000000;
+	genvar zeroVar;
+	for (zeroVar = 9; zeroVar < 15; zeroVar = zeroVar + 1) begin : zeros
+		assign messageSchedule[zeroVar] = 0;
+	end 
+	assign messageSchedule[15] = 32;
+	genvar wVar;
+	for (wVar = 16; wVar < 64; wVar = wVar + 1) begin : scheduleFill
+		wire[31:0] outputwVar;
+		MSUnit ms(messageSchedule[wVar - 15],messageSchedule[wVar - 2],messageSchedule[wVar - 16],messageSchedule[wVar - 7],outputwVar);
+		assign messageSchedule[wVar] = outputwVar;
+	end 
+	reg[255:0] partialHashes[64:0];
+	wire[31:0] initialHash[7:0];
+	assign initialHash[0] = 32'h6a09e667;
+	assign initialHash[1] = 32'hbb67ae85;
+	assign initialHash[2] = 32'h3c6ef372;
+	assign initialHash[3] = 32'ha54ff53a;
+	assign initialHash[4] = 32'h510e527f;
+	assign initialHash[5] = 32'h9b05688c;
+	assign initialHash[6] = 32'h1f83d9ab;
+	assign initialHash[7] = 32'h5be0cd19;
+	wire[255:0] flattenedInitialHash;
+	genvar initialHashVar;
+	for (initialHashVar = 0; initialHashVar < 8; initialHashVar = initialHashVar + 1) begin : initialHashLoop
+		assign flattenedInitialHash[255 - 32 * initialHashVar:224 - 32 * initialHashVar] = initialHash[initialHashVar];
+	end 
+	initial begin
+		partialHashes[0] <= flattenedInitialHash;
+	end 
+	genvar hashVar;
+	for (hashVar = 0; hashVar < 64; hashVar = hashVar + 1) begin : hashLoop
+		wire[31:0] hashOutput[7:0];
+		wire[255:0] flattenedHashOutput;
+		wire[255:0] flattenedPartialInput;
+		assign flattenedPartialInput = partialHashes[hashVar];
+		hashRound hr(flattenedPartialInput,k[hashVar],messageSchedule[hashVar],flattenedHashOutput);
+		always @(posedge (clk)) begin
+			partialHashes[hashVar + 1] <= flattenedHashOutput;
+		end 
+	end 
+	assign flattenedOutput = partialHashes[64];
+endmodule
+PARSE 4188 1544570305
+
+PARSE 4188 1544570305
+
+
+
+wire [31:0] nonce [7:0];
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+endmodule
+PARSE 4188 1544570305
+
+wire [31:0] hash [7:0];
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+endmodule
+PARSE 4188 1544570305
+
+
+assign nonce[0]=32'h61000000;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+endmodule
+PARSE 4188 1544570305
+
+genvar zeroVar;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+endmodule
+PARSE 4188 1544570305
+
+for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
+    assign nonce[zeroVar]=0;
+end
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+endmodule
+PARSE 4188 1544570305
+
+wire [255:0] flattenedNonce;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+endmodule
+PARSE 4188 1544570305
+
+wire [255:0] flattenedHash;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+endmodule
+PARSE 4188 1544570305
+
+
+genvar index1;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+endmodule
+PARSE 4188 1544570305
+
+for (index1=0; index1 < 8; index1=index1+1) begin: flatten
+    assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
+end
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+endmodule
+PARSE 4188 1544570305
+hashModule m(
+  flattenedNonce,
+  flattenedHash
+);
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(flattenedNonce,flattenedHash);
+endmodule
+PARSE 4188 1544570305
+
+
+genvar index2;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(flattenedNonce,flattenedHash);
+	genvar index2;
+endmodule
+PARSE 4188 1544570305
+
+for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
+    assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
+end
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+endmodule
+PARSE 4188 1544570305
+
+reg [5:0] count = 0;
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+endmodule
+PARSE 4188 1544570305
+
+always @(posedge clock.val) begin
+  count <= (count + 1);
+  if ((&count)) begin
+    $display("%h", hash[0]);
+    $finish(1);
+  end
+end
+ITEM 4188 1544570305
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+	always @(posedge clock.val) begin
+		count <= (count + 1);
+		if ((&count)) begin
+			$display("%h",hash[0]);
+			$finish(1);
+		end 
+	end 
+endmodule
+PARSE 4188 1544570305
+
+
+/*
+always @(posedge clock.val) begin
+  $display("%d %d %d %d %d", g.gridScores[0][0], g.gridScores[0][1], g.gridScores[0][2], g.gridScores[0][3], g.gridScores[0][4]);
+  $display("%d %d %d %d %d", g.gridScores[1][0], g.gridScores[1][1], g.gridScores[1][2], g.gridScores[1][3], g.gridScores[1][4]);
+  $display("%d %d %d %d %d", g.gridScores[2][0], g.gridScores[2][1], g.gridScores[2][2], g.gridScores[2][3], g.gridScores[2][4]);
+  $display("%d %d %d %d %d", g.gridScores[3][0], g.gridScores[3][1], g.gridScores[3][2], g.gridScores[3][3], g.gridScores[3][4]);
+  $display("%d %d %d %d %d", g.gridScores[4][0], g.gridScores[4][1], g.gridScores[4][2], g.gridScores[4][3], g.gridScores[4][4]);
+  $display("");
+  
+  count <= (count + 1);
+  if (done | (&count)) begin
+    $display("%d", g.score);
+    $finish(1);
+  end
+end
+*/
+PARSE 4188 1544570305
+
+CRASH 1544570305
+STARTUP 0 1544570547
+PARSE 4261 1544570547
+// This march file represents the smallest possible runtime interface for
+// cascade.  It instantiates the root and a single software-backed virtual
+// clock.
+
+include data/stdlib/stdlib.v;
+PARSE 4261 1544570547
+///////////////////////////////////////////////////////////////////////////////
+//
+// This file contains declarations for the cascade standard library.  The names
+// of these modules are reserved by cascade and cannot be overriden by user
+// programs.  Target-specific backend implementations are expected to provide a
+// march file which instantiates whichever of these modules that backend
+// supports and to provide appropriate annotations for those instantiations.
+// At a minimum, a target-specific implementation must instantiate both the
+// Root and the global clock.
+//
+// All of the modules in the standard library support the following
+// annotations.  Additional module-specific annotations are discussed below.
+//
+// __target = "..." 
+//   Required. Tells the compiler class which core compiler to use.
+// __target2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which core
+//   compiler to use during the second pass compilation.
+// __loc = "..."
+//   Optional. Tells the compiler class which interface compiler to use.  If
+//   not provided, defaults to "runtime", ie in the same process space as the
+//   runtime.
+// __loc2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which
+//   interface compiler to use during the second pass compilation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Minimal Implementation:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level module. Evaluated module items are inserted here.
+(*__std="logic"*)
+module Root(); 
+endmodule
+DECL 4261 1544570547
+(*__std = "logic"*) 
+module Root();
+endmodule
+PARSE 4261 1544570547
+
+// The top-level virtual clock
+(*__std="clock"*)
+module Clock(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output reg val = 0;
+  // always @(val) begin
+  //  #1; val <= ~val;  
+  // end
+
+endmodule
+DECL 4261 1544570547
+(*__std = "clock"*) 
+module Clock(val);
+	output wire val;
+endmodule
+PARSE 4261 1544570547
+
+///////////////////////////////////////////////////////////////////////////////
+// Target-Specific Components:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level reset signal
+(*__std="reset"*)
+module Reset(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output wire val = <reset pin>;
+
+endmodule
+DECL 4261 1544570547
+(*__std = "reset"*) 
+module Reset(val);
+	output wire val;
+endmodule
+PARSE 4261 1544570547
+
+// An arbitrary width source of binary inputs
+(*__std="pad"*)
+module Pad#(
+  parameter WIDTH = 4
+)(
+  output wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // output wire[WIDTH-1:0] val = <pad pins>;
+
+endmodule
+DECL 4261 1544570547
+(*__std = "pad"*) 
+module Pad(val);
+	parameter WIDTH = 4;
+	output wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4261 1544570547
+
+// An arbitrary width source of binary outputs
+(*__std="led"*)
+module Led#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <led pins> = val;
+
+endmodule
+DECL 4261 1544570547
+(*__std = "led"*) 
+module Led(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4261 1544570547
+
+// An arbitrary width source of binary outputs
+(*__std="gpio"*)
+module Gpio#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <gpio pins> = val;
+
+endmodule
+DECL 4261 1544570547
+(*__std = "gpio"*) 
+module Gpio(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4261 1544570547
+
+///////////////////////////////////////////////////////////////////////////////
+// Reusable Data-Structures:
+///////////////////////////////////////////////////////////////////////////////
+
+// An dual-port-read single-port-write memory with arbitrary size and byte
+// width.  Supports additional annotations below:
+// 
+// __file = "..."
+//   Optional. If specified the contents of this memory will be read/written
+//   from/to this file when the program begins/finishes executing.
+(*__std="memory",__target="sw"*)
+module Memory#(
+  parameter ADDR_SIZE = 4,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire wen,
+  input  wire[ADDR_SIZE-1:0] raddr1,
+  output wire[BYTE_SIZE-1:0] rdata1,
+  input  wire[ADDR_SIZE-1:0] raddr2,
+  output wire[BYTE_SIZE-1:0] rdata2,
+  input  wire[ADDR_SIZE-1:0] waddr,
+  input  wire[BYTE_SIZE-1:0] wdata
+);
+
+  // Possible Implementation:
+  //
+  // input wire clock;
+  // input wire wen;
+  // input wire[ADDR_SIZE-1:0] raddr1;
+  // input wire[ADDR_SIZE-1:0] raddr2;
+  // input wire[ADDR_SIZE-1:0] waddr;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata1;
+  // output wire[BYTE_SIZE-1:0] rdata2;
+
+  // reg[BYTE_SIZE-1:0] mem[ADDR_SIZE-1:0];
+  // assign rdata1 = mem[raddr1];
+  // assign rdata2 = mem[raddr2];
+  // always @(posedge clock) begin
+  //   if (wen) begin 
+  //     mem[waddr] <= wdata;
+  //   end
+  // end
+
+endmodule
+DECL 4261 1544570547
+(*__std = "memory",__target = "sw"*) 
+module Memory(clock,wen,raddr1,rdata1,raddr2,rdata2,waddr,wdata);
+	parameter ADDR_SIZE = 4;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire wen;
+	input wire[ADDR_SIZE - 1:0] raddr1;
+	output wire[BYTE_SIZE - 1:0] rdata1;
+	input wire[ADDR_SIZE - 1:0] raddr2;
+	output wire[BYTE_SIZE - 1:0] rdata2;
+	input wire[ADDR_SIZE - 1:0] waddr;
+	input wire[BYTE_SIZE - 1:0] wdata;
+endmodule
+PARSE 4261 1544570547
+
+// A bounded-depth read/write fifo. Supports additional annotations below.
+// Attempting to write a new value into a full fifo or to read a value from
+// an empty fifo will result in undefined behavor.
+//
+// __file = "..."
+//   Optional. If specified this fifo will be initialized with values taken
+//   from this file. If there are more values in this file than the fifo's
+//   maximum depth, this fifo will continue to pull values from the file until
+//   it is exhausted.
+// __count = "..."
+//   Optional. If specifid along with __file, this fifo will be initialized
+//   with 'count' copies of the data in __file.
+(*__std="fifo",__target="sw"*)
+module Fifo#(
+  parameter DEPTH = 8,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire rreq,
+  output wire[BYTE_SIZE-1:0] rdata,
+  input  wire wreq,
+  input  wire[BYTE_SIZE-1:0] wdata,
+  output wire empty,
+  output wire full
+);
+
+  // Possible Implementation:
+  //
+  // input wire rreq;
+  // input wire wreq;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // reg[BYTE_SIZE-1:0] fifo[log(DEPTH)-1:0];
+  // reg[log(DEPTH)-1:0] head = 0;
+  // reg[log(DEPTH)-1:0] tail = 1;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata = fifo[head];
+  // output wire empty = (head+1 == tail) & <file empty>;
+  // output wire full = (head == tail) | !<file empty>;
+  //
+  // initial <fill from file until full or file empty>;
+  //
+  // always @(posedge clock) begin
+  //   if (rreq) begin
+  //     head <= head+1;
+  //   end
+  //   if (wreq) begin 
+  //     fifo[tail] <= wdata;
+  //     tail <= tail+1;
+  //   end
+  //   if (!<file empty>) begin
+  //     fifo[tail] <= <next file data>;
+  //     tail <= tail+1;  
+  //   end
+  // end
+
+endmodule
+DECL 4261 1544570547
+(*__std = "fifo",__target = "sw"*) 
+module Fifo(clock,rreq,rdata,wreq,wdata,empty,full);
+	parameter DEPTH = 8;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire rreq;
+	output wire[BYTE_SIZE - 1:0] rdata;
+	input wire wreq;
+	input wire[BYTE_SIZE - 1:0] wdata;
+	output wire empty;
+	output wire full;
+endmodule
+PARSE 4261 1544570547
+
+PARSE 4261 1544570547
+
+
+(*__target="sw", __loc="runtime"*)
+Root root();
+ITEM 4261 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+endmodule
+PARSE 4261 1544570547
+
+
+(*__target="sw", __loc="runtime"*)                    
+Clock clock();
+ITEM 4261 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+endmodule
+PARSE 4261 1544570547
+
+
+PARSE 4586 1544570547
+include debug.v;
+PARSE 4586 1544570547
+include hashModule.v;
+PARSE 4586 1544570547
+module MSUnit(
+    input wire [31:0] w15,
+    input wire [31:0] w2,
+    input wire [31:0] w16,
+    input wire [31:0] w7,
+
+    output wire [31:0] w0
+
+);
+    wire [31:0] S0;
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    wire [31:0] S1;
+    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    
+    assign w0=w16+S0+w7+S1;
+
+endmodule
+DECL 4586 1544570547
+(*__std = "logic"*) 
+module MSUnit(w15,w2,w16,w7,w0);
+	input wire[31:0] w15;
+	input wire[31:0] w2;
+	input wire[31:0] w16;
+	input wire[31:0] w7;
+	output wire[31:0] w0;
+	wire[31:0] S0;
+	assign S0 = {w15[6:0],w15[31:7]} ^ {w15[17:0],w15[31:17]} ^ {w15 >> 3};
+	wire[31:0] S1;
+	assign S1 = {w2[16:0],w2[31:18]} ^ {w2[18:0],w2[31:19]} ^ {w2 >> 10};
+	assign w0 = w16 + S0 + w7 + S1;
+endmodule
+PARSE 4586 1544570547
+
+module hashRound(
+    input wire [255:0] workingInput,
+    input wire [31:0] k,
+    input wire [31:0] w,
+
+    output wire [255:0] workingOutput
+
+);
+
+    wire [31:0] workingVariables[7:0];
+    wire [31:0] nWorkingVariables[7:0];
+    genvar index1;
+    for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+        assign workingVariables[index1] = workingInput[255-32*index1:224-32*index1];
+    end
+
+    wire [31:0] e;
+    assign e=workingVariables[4];
+    wire [31:0] a;
+    assign a=workingVariables[0];
+
+    wire [31:0] S1;
+    assign S1 =  {e[5 : 0], e[31 : 6]} ^ {e[10 : 0], e[31 : 11]} ^ {e[24 : 0], e[31 : 25]};
+    wire [31:0] ch;
+    assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+    wire [31:0] temp1;
+    assign temp1 = workingVariables[7] + S1 + ch + k + w;
+    wire [31:0] S0;
+    assign S0 = {a[1 : 0], a[31 : 2]} ^ {a[12 : 0], a[31 : 13]} ^ {a[21 : 0], a[31 : 22]};
+    wire [31:0] maj;
+    assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+    wire [31:0] temp2;
+    assign temp2 = S0 + maj;
+
+    assign nWorkingVariables[7] = workingVariables[6];
+    assign nWorkingVariables[5] = workingVariables[4];
+    assign nWorkingVariables[4] = workingVariables[3]+ temp1;
+    assign nWorkingVariables[6] = workingVariables[5];
+    assign nWorkingVariables[3] = workingVariables[2];
+    assign nWorkingVariables[2] = workingVariables[1];
+    assign nWorkingVariables[1] = workingVariables[0];
+    assign nWorkingVariables[0] = temp1 + temp2;
+
+    genvar index2;
+    for (index2=0; index2 < 8; index2=index2+1) begin: flatten
+        assign workingOutput[255-32*index2:224-32*index2] = nWorkingVariables[index2];
+    end
+
+
+endmodule
+DECL 4586 1544570547
+(*__std = "logic"*) 
+module hashRound(workingInput,k,w,workingOutput);
+	input wire[255:0] workingInput;
+	input wire[31:0] k;
+	input wire[31:0] w;
+	output wire[255:0] workingOutput;
+	wire[31:0] workingVariables[7:0];
+	wire[31:0] nWorkingVariables[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign workingVariables[index1] = workingInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	wire[31:0] e;
+	assign e = workingVariables[4];
+	wire[31:0] a;
+	assign a = workingVariables[0];
+	wire[31:0] S1;
+	assign S1 = {e[5:0],e[31:6]} ^ {e[10:0],e[31:11]} ^ {e[24:0],e[31:25]};
+	wire[31:0] ch;
+	assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~workingVariables[4]) & workingVariables[6]);
+	wire[31:0] temp1;
+	assign temp1 = workingVariables[7] + S1 + ch + k + w;
+	wire[31:0] S0;
+	assign S0 = {a[1:0],a[31:2]} ^ {a[12:0],a[31:13]} ^ {a[21:0],a[31:22]};
+	wire[31:0] maj;
+	assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+	wire[31:0] temp2;
+	assign temp2 = S0 + maj;
+	assign nWorkingVariables[7] = workingVariables[6];
+	assign nWorkingVariables[5] = workingVariables[4];
+	assign nWorkingVariables[4] = workingVariables[3] + temp1;
+	assign nWorkingVariables[6] = workingVariables[5];
+	assign nWorkingVariables[3] = workingVariables[2];
+	assign nWorkingVariables[2] = workingVariables[1];
+	assign nWorkingVariables[1] = workingVariables[0];
+	assign nWorkingVariables[0] = temp1 + temp2;
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : flatten
+		assign workingOutput[255 - 32 * index2:224 - 32 * index2] = nWorkingVariables[index2];
+	end 
+endmodule
+PARSE 4586 1544570547
+
+//hashes a nonce that is a 32 byte value
+module hashModule#(
+
+    parameter kflat =
+    {
+    32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,
+    32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,
+    32'he49b69c1,32'hefbe4786,32'h0fc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,
+    32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h06ca6351,32'h14292967,
+    32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,
+    32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,
+    32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,
+    32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2
+    },
+    parameter kSize =64
+
+    //parameter [2047:0]k = 2048'h428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5hd807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174he49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988dah983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca635114292967h27b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85ha2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa070h19a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3h748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2
+
+)
+(
+    input wire clk,
+    input wire [255:0] flattenedInput,
+    output wire [255:0] flattenedOutput
+);
+
+wire [31:0] k [63:0];
+genvar kVar;
+for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
+    assign k[kVar]= ((kflat>>(32*(kSize-kVar-1)))&{32{1'b1}});
+end
+
+
+wire [31:0] messageSchedule[63:0];
+wire [31:0] nonce[7:0];
+genvar index1;
+for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+    assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
+end
+
+//copy nonce
+genvar copyVar;
+for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
+    assign messageSchedule[copyVar]=nonce[copyVar];
+end
+
+//insert 1 and pad 0s
+assign messageSchedule[8]=32'h80000000;
+genvar zeroVar;
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    assign messageSchedule[zeroVar]=0;
+end
+//write in 32 as length into the last 32 bit word
+assign messageSchedule[15]=32;
+
+//rest of the schedule array is generated based on algorithm
+genvar wVar;
+for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
+    wire [31:0] outputwVar;
+
+    MSUnit ms(
+        messageSchedule[wVar-15], messageSchedule[wVar-2],
+        messageSchedule[wVar-16], messageSchedule[wVar-7],
+
+        outputwVar
+    );
+
+    assign messageSchedule[wVar]=outputwVar;
+end
+
+reg [255:0] partialHashes [64:0];
+//initialize our hash array to our default values
+wire [31:0] initialHash[7:0];
+assign initialHash[0] = 32'h6a09e667;
+assign initialHash[1] = 32'hbb67ae85;
+assign initialHash[2] = 32'h3c6ef372;
+assign initialHash[3] = 32'ha54ff53a;
+assign initialHash[4] = 32'h510e527f;
+assign initialHash[5] = 32'h9b05688c;
+assign initialHash[6] = 32'h1f83d9ab;
+assign initialHash[7] = 32'h5be0cd19;
+
+wire [255:0] flattenedInitialHash;
+genvar initialHashVar;
+for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: initialHashLoop
+    assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
+end
+
+initial begin
+    partialHashes[0]<=flattenedInitialHash;
+end
+
+//apply hashing
+genvar hashVar;
+for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
+    wire [31:0] hashOutput [7: 0];
+    wire [255:0] flattenedHashOutput;
+    wire [255:0] flattenedPartialInput=partialHashes[hashVar];
+
+    hashRound hr(
+        flattenedPartialInput,
+        k[hashVar],
+        messageSchedule[hashVar],
+
+        flattenedHashOutput
+    );
+
+    always @(posedge(clk)) begin
+        partialHashes[hashVar+1]<=flattenedHashOutput;
+    end
+end
+
+
+assign flattenedOutput=partialHashes[64];
+
+endmodule
+DECL 4586 1544570547
+(*__std = "logic"*) 
+module hashModule(clk,flattenedInput,flattenedOutput);
+	parameter kflat = {32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,32'he49b69c1,32'hefbe4786,32'hfc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h6ca6351,32'h14292967,32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2};
+	parameter kSize = 64;
+	input wire clk;
+	input wire[255:0] flattenedInput;
+	output wire[255:0] flattenedOutput;
+	wire[31:0] k[63:0];
+	genvar kVar;
+	for (kVar = 0; kVar < 64; kVar = kVar + 1) begin : kInitialLoop
+		assign k[kVar] = ((kflat >> (32 * (kSize - kVar - 1))) & {32 {1'b1}});
+	end 
+	wire[31:0] messageSchedule[63:0];
+	wire[31:0] nonce[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign nonce[index1] = flattenedInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	genvar copyVar;
+	for (copyVar = 0; copyVar < 8; copyVar = copyVar + 1) begin : copy
+		assign messageSchedule[copyVar] = nonce[copyVar];
+	end 
+	assign messageSchedule[8] = 32'h80000000;
+	genvar zeroVar;
+	for (zeroVar = 9; zeroVar < 15; zeroVar = zeroVar + 1) begin : zeros
+		assign messageSchedule[zeroVar] = 0;
+	end 
+	assign messageSchedule[15] = 32;
+	genvar wVar;
+	for (wVar = 16; wVar < 64; wVar = wVar + 1) begin : scheduleFill
+		wire[31:0] outputwVar;
+		MSUnit ms(messageSchedule[wVar - 15],messageSchedule[wVar - 2],messageSchedule[wVar - 16],messageSchedule[wVar - 7],outputwVar);
+		assign messageSchedule[wVar] = outputwVar;
+	end 
+	reg[255:0] partialHashes[64:0];
+	wire[31:0] initialHash[7:0];
+	assign initialHash[0] = 32'h6a09e667;
+	assign initialHash[1] = 32'hbb67ae85;
+	assign initialHash[2] = 32'h3c6ef372;
+	assign initialHash[3] = 32'ha54ff53a;
+	assign initialHash[4] = 32'h510e527f;
+	assign initialHash[5] = 32'h9b05688c;
+	assign initialHash[6] = 32'h1f83d9ab;
+	assign initialHash[7] = 32'h5be0cd19;
+	wire[255:0] flattenedInitialHash;
+	genvar initialHashVar;
+	for (initialHashVar = 0; initialHashVar < 8; initialHashVar = initialHashVar + 1) begin : initialHashLoop
+		assign flattenedInitialHash[255 - 32 * initialHashVar:224 - 32 * initialHashVar] = initialHash[initialHashVar];
+	end 
+	initial begin
+		partialHashes[0] <= flattenedInitialHash;
+	end 
+	genvar hashVar;
+	for (hashVar = 0; hashVar < 64; hashVar = hashVar + 1) begin : hashLoop
+		wire[31:0] hashOutput[7:0];
+		wire[255:0] flattenedHashOutput;
+		wire[255:0] flattenedPartialInput;
+		assign flattenedPartialInput = partialHashes[hashVar];
+		hashRound hr(flattenedPartialInput,k[hashVar],messageSchedule[hashVar],flattenedHashOutput);
+		always @(posedge (clk)) begin
+			partialHashes[hashVar + 1] <= flattenedHashOutput;
+		end 
+	end 
+	assign flattenedOutput = partialHashes[64];
+endmodule
+PARSE 4586 1544570547
+
+PARSE 4586 1544570547
+
+
+
+wire [31:0] nonce [7:0];
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+endmodule
+PARSE 4586 1544570547
+
+wire [31:0] hash [7:0];
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+endmodule
+PARSE 4586 1544570547
+
+
+assign nonce[0]=32'h61000000;
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+endmodule
+PARSE 4586 1544570547
+
+genvar zeroVar;
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+endmodule
+PARSE 4586 1544570547
+
+for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
+    assign nonce[zeroVar]=0;
+end
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+endmodule
+PARSE 4586 1544570547
+
+wire [255:0] flattenedNonce;
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+endmodule
+PARSE 4586 1544570547
+
+wire [255:0] flattenedHash;
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+endmodule
+PARSE 4586 1544570547
+
+
+genvar index1;
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+endmodule
+PARSE 4586 1544570547
+
+for (index1=0; index1 < 8; index1=index1+1) begin: flatten
+    assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
+end
+ITEM 4586 1544570547
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+endmodule
+PARSE 4586 1544570547
+hashModule m(
+  clock.val,
+  flattenedNonce,
+  flattenedHash
+);
+ITEM 4586 1544570548
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+endmodule
+PARSE 4586 1544570548
+
+
+genvar index2;
+ITEM 4586 1544570548
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+endmodule
+PARSE 4586 1544570548
+
+for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
+    assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
+end
+ITEM 4586 1544570548
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+endmodule
+PARSE 4586 1544570548
+
+reg [5:0] count = 0;
+ITEM 4586 1544570548
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+endmodule
+PARSE 4586 1544570548
+
+always @(posedge clock.val) begin
+  count <= (count + 1);
+  if ((&count)) begin
+    $display("%h", hash[0]);
+    $finish(1);
+  end
+end
+ITEM 4586 1544570548
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+	always @(posedge clock.val) begin
+		count <= (count + 1);
+		if ((&count)) begin
+			$display("%h",hash[0]);
+			$finish(1);
+		end 
+	end 
+endmodule
+PARSE 4586 1544570548
+
+
+/*
+always @(posedge clock.val) begin
+  $display("%d %d %d %d %d", g.gridScores[0][0], g.gridScores[0][1], g.gridScores[0][2], g.gridScores[0][3], g.gridScores[0][4]);
+  $display("%d %d %d %d %d", g.gridScores[1][0], g.gridScores[1][1], g.gridScores[1][2], g.gridScores[1][3], g.gridScores[1][4]);
+  $display("%d %d %d %d %d", g.gridScores[2][0], g.gridScores[2][1], g.gridScores[2][2], g.gridScores[2][3], g.gridScores[2][4]);
+  $display("%d %d %d %d %d", g.gridScores[3][0], g.gridScores[3][1], g.gridScores[3][2], g.gridScores[3][3], g.gridScores[3][4]);
+  $display("%d %d %d %d %d", g.gridScores[4][0], g.gridScores[4][1], g.gridScores[4][2], g.gridScores[4][3], g.gridScores[4][4]);
+  $display("");
+  
+  count <= (count + 1);
+  if (done | (&count)) begin
+    $display("%d", g.score);
+    $finish(1);
+  end
+end
+*/
+PARSE 4586 1544570548
+
+CRASH 1544570548
+STARTUP 0 1544587117
+PARSE 4005 1544587117
+// This march file represents the smallest possible runtime interface for
+// cascade.  It instantiates the root and a single software-backed virtual
+// clock.
+
+include data/stdlib/stdlib.v;
+PARSE 4005 1544587117
+///////////////////////////////////////////////////////////////////////////////
+//
+// This file contains declarations for the cascade standard library.  The names
+// of these modules are reserved by cascade and cannot be overriden by user
+// programs.  Target-specific backend implementations are expected to provide a
+// march file which instantiates whichever of these modules that backend
+// supports and to provide appropriate annotations for those instantiations.
+// At a minimum, a target-specific implementation must instantiate both the
+// Root and the global clock.
+//
+// All of the modules in the standard library support the following
+// annotations.  Additional module-specific annotations are discussed below.
+//
+// __target = "..." 
+//   Required. Tells the compiler class which core compiler to use.
+// __target2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which core
+//   compiler to use during the second pass compilation.
+// __loc = "..."
+//   Optional. Tells the compiler class which interface compiler to use.  If
+//   not provided, defaults to "runtime", ie in the same process space as the
+//   runtime.
+// __loc2 = "..."
+//   Optional. Enables jit compilation and tells the compiler class which
+//   interface compiler to use during the second pass compilation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Minimal Implementation:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level module. Evaluated module items are inserted here.
+(*__std="logic"*)
+module Root(); 
+endmodule
+DECL 4005 1544587117
+(*__std = "logic"*) 
+module Root();
+endmodule
+PARSE 4005 1544587117
+
+// The top-level virtual clock
+(*__std="clock"*)
+module Clock(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output reg val = 0;
+  // always @(val) begin
+  //  #1; val <= ~val;  
+  // end
+
+endmodule
+DECL 4005 1544587117
+(*__std = "clock"*) 
+module Clock(val);
+	output wire val;
+endmodule
+PARSE 4005 1544587117
+
+///////////////////////////////////////////////////////////////////////////////
+// Target-Specific Components:
+///////////////////////////////////////////////////////////////////////////////
+
+// The top-level reset signal
+(*__std="reset"*)
+module Reset(
+  output wire val
+);
+
+  // Possible Implementation:
+  //
+  // output wire val = <reset pin>;
+
+endmodule
+DECL 4005 1544587117
+(*__std = "reset"*) 
+module Reset(val);
+	output wire val;
+endmodule
+PARSE 4005 1544587117
+
+// An arbitrary width source of binary inputs
+(*__std="pad"*)
+module Pad#(
+  parameter WIDTH = 4
+)(
+  output wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // output wire[WIDTH-1:0] val = <pad pins>;
+
+endmodule
+DECL 4005 1544587117
+(*__std = "pad"*) 
+module Pad(val);
+	parameter WIDTH = 4;
+	output wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4005 1544587117
+
+// An arbitrary width source of binary outputs
+(*__std="led"*)
+module Led#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <led pins> = val;
+
+endmodule
+DECL 4005 1544587117
+(*__std = "led"*) 
+module Led(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4005 1544587117
+
+// An arbitrary width source of binary outputs
+(*__std="gpio"*)
+module Gpio#(
+  parameter WIDTH = 8
+)(
+  input wire[WIDTH-1:0] val
+);
+
+  // Possible Implementation:
+  //
+  // input wire[WIDTH-1:0] val;
+  // assign <gpio pins> = val;
+
+endmodule
+DECL 4005 1544587117
+(*__std = "gpio"*) 
+module Gpio(val);
+	parameter WIDTH = 8;
+	input wire[WIDTH - 1:0] val;
+endmodule
+PARSE 4005 1544587117
+
+///////////////////////////////////////////////////////////////////////////////
+// Reusable Data-Structures:
+///////////////////////////////////////////////////////////////////////////////
+
+// An dual-port-read single-port-write memory with arbitrary size and byte
+// width.  Supports additional annotations below:
+// 
+// __file = "..."
+//   Optional. If specified the contents of this memory will be read/written
+//   from/to this file when the program begins/finishes executing.
+(*__std="memory",__target="sw"*)
+module Memory#(
+  parameter ADDR_SIZE = 4,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire wen,
+  input  wire[ADDR_SIZE-1:0] raddr1,
+  output wire[BYTE_SIZE-1:0] rdata1,
+  input  wire[ADDR_SIZE-1:0] raddr2,
+  output wire[BYTE_SIZE-1:0] rdata2,
+  input  wire[ADDR_SIZE-1:0] waddr,
+  input  wire[BYTE_SIZE-1:0] wdata
+);
+
+  // Possible Implementation:
+  //
+  // input wire clock;
+  // input wire wen;
+  // input wire[ADDR_SIZE-1:0] raddr1;
+  // input wire[ADDR_SIZE-1:0] raddr2;
+  // input wire[ADDR_SIZE-1:0] waddr;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata1;
+  // output wire[BYTE_SIZE-1:0] rdata2;
+
+  // reg[BYTE_SIZE-1:0] mem[ADDR_SIZE-1:0];
+  // assign rdata1 = mem[raddr1];
+  // assign rdata2 = mem[raddr2];
+  // always @(posedge clock) begin
+  //   if (wen) begin 
+  //     mem[waddr] <= wdata;
+  //   end
+  // end
+
+endmodule
+DECL 4005 1544587117
+(*__std = "memory",__target = "sw"*) 
+module Memory(clock,wen,raddr1,rdata1,raddr2,rdata2,waddr,wdata);
+	parameter ADDR_SIZE = 4;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire wen;
+	input wire[ADDR_SIZE - 1:0] raddr1;
+	output wire[BYTE_SIZE - 1:0] rdata1;
+	input wire[ADDR_SIZE - 1:0] raddr2;
+	output wire[BYTE_SIZE - 1:0] rdata2;
+	input wire[ADDR_SIZE - 1:0] waddr;
+	input wire[BYTE_SIZE - 1:0] wdata;
+endmodule
+PARSE 4005 1544587117
+
+// A bounded-depth read/write fifo. Supports additional annotations below.
+// Attempting to write a new value into a full fifo or to read a value from
+// an empty fifo will result in undefined behavor.
+//
+// __file = "..."
+//   Optional. If specified this fifo will be initialized with values taken
+//   from this file. If there are more values in this file than the fifo's
+//   maximum depth, this fifo will continue to pull values from the file until
+//   it is exhausted.
+// __count = "..."
+//   Optional. If specifid along with __file, this fifo will be initialized
+//   with 'count' copies of the data in __file.
+(*__std="fifo",__target="sw"*)
+module Fifo#(
+  parameter DEPTH = 8,
+  parameter BYTE_SIZE = 8
+)(
+  input  wire clock,
+  input  wire rreq,
+  output wire[BYTE_SIZE-1:0] rdata,
+  input  wire wreq,
+  input  wire[BYTE_SIZE-1:0] wdata,
+  output wire empty,
+  output wire full
+);
+
+  // Possible Implementation:
+  //
+  // input wire rreq;
+  // input wire wreq;
+  // input wire[BYTE_SIZE-1:0] wdata;
+  //
+  // reg[BYTE_SIZE-1:0] fifo[log(DEPTH)-1:0];
+  // reg[log(DEPTH)-1:0] head = 0;
+  // reg[log(DEPTH)-1:0] tail = 1;
+  //
+  // output wire[BYTE_SIZE-1:0] rdata = fifo[head];
+  // output wire empty = (head+1 == tail) & <file empty>;
+  // output wire full = (head == tail) | !<file empty>;
+  //
+  // initial <fill from file until full or file empty>;
+  //
+  // always @(posedge clock) begin
+  //   if (rreq) begin
+  //     head <= head+1;
+  //   end
+  //   if (wreq) begin 
+  //     fifo[tail] <= wdata;
+  //     tail <= tail+1;
+  //   end
+  //   if (!<file empty>) begin
+  //     fifo[tail] <= <next file data>;
+  //     tail <= tail+1;  
+  //   end
+  // end
+
+endmodule
+DECL 4005 1544587117
+(*__std = "fifo",__target = "sw"*) 
+module Fifo(clock,rreq,rdata,wreq,wdata,empty,full);
+	parameter DEPTH = 8;
+	parameter BYTE_SIZE = 8;
+	input wire clock;
+	input wire rreq;
+	output wire[BYTE_SIZE - 1:0] rdata;
+	input wire wreq;
+	input wire[BYTE_SIZE - 1:0] wdata;
+	output wire empty;
+	output wire full;
+endmodule
+PARSE 4005 1544587117
+
+PARSE 4005 1544587117
+
+
+(*__target="sw", __loc="runtime"*)
+Root root();
+ITEM 4005 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+endmodule
+PARSE 4005 1544587117
+
+
+(*__target="sw", __loc="runtime"*)                    
+Clock clock();
+ITEM 4005 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+endmodule
+PARSE 4005 1544587117
+
+
+PARSE 4495 1544587117
+include debug.v;
+PARSE 4495 1544587117
+include hashModule.v;
+PARSE 4495 1544587117
+module MSUnit(
+    input wire [31:0] w15,
+    input wire [31:0] w2,
+    input wire [31:0] w16,
+    input wire [31:0] w7,
+
+    output wire [31:0] w0
+
+);
+    wire [31:0] S0;
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    wire [31:0] S1;
+    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    
+    assign w0=w16+S0+w7+S1;
+
+endmodule
+DECL 4495 1544587117
+(*__std = "logic"*) 
+module MSUnit(w15,w2,w16,w7,w0);
+	input wire[31:0] w15;
+	input wire[31:0] w2;
+	input wire[31:0] w16;
+	input wire[31:0] w7;
+	output wire[31:0] w0;
+	wire[31:0] S0;
+	assign S0 = {w15[6:0],w15[31:7]} ^ {w15[17:0],w15[31:17]} ^ {w15 >> 3};
+	wire[31:0] S1;
+	assign S1 = {w2[16:0],w2[31:18]} ^ {w2[18:0],w2[31:19]} ^ {w2 >> 10};
+	assign w0 = w16 + S0 + w7 + S1;
+endmodule
+PARSE 4495 1544587117
+
+module hashRound(
+    input wire [255:0] workingInput,
+    input wire [31:0] k,
+    input wire [31:0] w,
+
+    output wire [255:0] workingOutput
+
+);
+
+    wire [31:0] workingVariables[7:0];
+    wire [31:0] nWorkingVariables[7:0];
+    genvar index1;
+    for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+        assign workingVariables[index1] = workingInput[255-32*index1:224-32*index1];
+    end
+
+    wire [31:0] e;
+    assign e=workingVariables[4];
+    wire [31:0] a;
+    assign a=workingVariables[0];
+
+    wire [31:0] S1;
+    assign S1 =  {e[5 : 0], e[31 : 6]} ^ {e[10 : 0], e[31 : 11]} ^ {e[24 : 0], e[31 : 25]};
+    wire [31:0] ch;
+    assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~ workingVariables[4]) & workingVariables[6]);
+    wire [31:0] temp1;
+    assign temp1 = workingVariables[7] + S1 + ch + k + w;
+    wire [31:0] S0;
+    assign S0 = {a[1 : 0], a[31 : 2]} ^ {a[12 : 0], a[31 : 13]} ^ {a[21 : 0], a[31 : 22]};
+    wire [31:0] maj;
+    assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+    wire [31:0] temp2;
+    assign temp2 = S0 + maj;
+
+    assign nWorkingVariables[7] = workingVariables[6];
+    assign nWorkingVariables[5] = workingVariables[4];
+    assign nWorkingVariables[4] = workingVariables[3]+ temp1;
+    assign nWorkingVariables[6] = workingVariables[5];
+    assign nWorkingVariables[3] = workingVariables[2];
+    assign nWorkingVariables[2] = workingVariables[1];
+    assign nWorkingVariables[1] = workingVariables[0];
+    assign nWorkingVariables[0] = temp1 + temp2;
+
+    genvar index2;
+    for (index2=0; index2 < 8; index2=index2+1) begin: flatten
+        assign workingOutput[255-32*index2:224-32*index2] = nWorkingVariables[index2];
+    end
+
+
+endmodule
+DECL 4495 1544587117
+(*__std = "logic"*) 
+module hashRound(workingInput,k,w,workingOutput);
+	input wire[255:0] workingInput;
+	input wire[31:0] k;
+	input wire[31:0] w;
+	output wire[255:0] workingOutput;
+	wire[31:0] workingVariables[7:0];
+	wire[31:0] nWorkingVariables[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign workingVariables[index1] = workingInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	wire[31:0] e;
+	assign e = workingVariables[4];
+	wire[31:0] a;
+	assign a = workingVariables[0];
+	wire[31:0] S1;
+	assign S1 = {e[5:0],e[31:6]} ^ {e[10:0],e[31:11]} ^ {e[24:0],e[31:25]};
+	wire[31:0] ch;
+	assign ch = (workingVariables[4] & workingVariables[5]) ^ ((~workingVariables[4]) & workingVariables[6]);
+	wire[31:0] temp1;
+	assign temp1 = workingVariables[7] + S1 + ch + k + w;
+	wire[31:0] S0;
+	assign S0 = {a[1:0],a[31:2]} ^ {a[12:0],a[31:13]} ^ {a[21:0],a[31:22]};
+	wire[31:0] maj;
+	assign maj = (workingVariables[0] & workingVariables[1]) ^ (workingVariables[0] & workingVariables[2]) ^ (workingVariables[1] & workingVariables[2]);
+	wire[31:0] temp2;
+	assign temp2 = S0 + maj;
+	assign nWorkingVariables[7] = workingVariables[6];
+	assign nWorkingVariables[5] = workingVariables[4];
+	assign nWorkingVariables[4] = workingVariables[3] + temp1;
+	assign nWorkingVariables[6] = workingVariables[5];
+	assign nWorkingVariables[3] = workingVariables[2];
+	assign nWorkingVariables[2] = workingVariables[1];
+	assign nWorkingVariables[1] = workingVariables[0];
+	assign nWorkingVariables[0] = temp1 + temp2;
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : flatten
+		assign workingOutput[255 - 32 * index2:224 - 32 * index2] = nWorkingVariables[index2];
+	end 
+endmodule
+PARSE 4495 1544587117
+
+//hashes a nonce that is a 32 byte value
+module hashModule#(
+
+    parameter kflat =
+    {
+    32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,
+    32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,
+    32'he49b69c1,32'hefbe4786,32'h0fc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,
+    32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h06ca6351,32'h14292967,
+    32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,
+    32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,
+    32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,
+    32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2
+    },
+    parameter kSize =64
+
+    //parameter [2047:0]k = 2048'h428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5hd807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174he49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988dah983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca635114292967h27b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85ha2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa070h19a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3h748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2
+
+)
+(
+    input wire clk,
+    input wire [255:0] flattenedInput,
+    output wire [255:0] flattenedOutput
+);
+
+wire [31:0] k [63:0];
+genvar kVar;
+for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
+    assign k[kVar]= ((kflat>>(32*(kSize-kVar-1)))&{32{1'b1}});
+end
+
+
+wire [31:0] messageSchedule[63:0];
+wire [31:0] nonce[7:0];
+genvar index1;
+for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
+    assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
+end
+
+//copy nonce
+genvar copyVar;
+for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
+    assign messageSchedule[copyVar]=nonce[copyVar];
+end
+
+//insert 1 and pad 0s
+assign messageSchedule[8]=32'h80000000;
+genvar zeroVar;
+for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
+    assign messageSchedule[zeroVar]=0;
+end
+//write in 32 as length into the last 32 bit word
+assign messageSchedule[15]=32;
+
+//rest of the schedule array is generated based on algorithm
+genvar wVar;
+for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
+    wire [31:0] outputwVar;
+
+    MSUnit ms(
+        messageSchedule[wVar-15], messageSchedule[wVar-2],
+        messageSchedule[wVar-16], messageSchedule[wVar-7],
+
+        outputwVar
+    );
+
+    assign messageSchedule[wVar]=outputwVar;
+end
+
+reg [255:0] partialHashes [64:0];
+//initialize our hash array to our default values
+wire [31:0] initialHash[7:0];
+assign initialHash[0] = 32'h6a09e667;
+assign initialHash[1] = 32'hbb67ae85;
+assign initialHash[2] = 32'h3c6ef372;
+assign initialHash[3] = 32'ha54ff53a;
+assign initialHash[4] = 32'h510e527f;
+assign initialHash[5] = 32'h9b05688c;
+assign initialHash[6] = 32'h1f83d9ab;
+assign initialHash[7] = 32'h5be0cd19;
+
+wire [255:0] flattenedInitialHash;
+genvar initialHashVar;
+for(initialHashVar=0; initialHashVar<8; initialHashVar=initialHashVar+1) begin: initialHashLoop
+    assign flattenedInitialHash[255-32*initialHashVar:224-32*initialHashVar] = initialHash[initialHashVar];
+end
+
+initial begin
+    partialHashes[0]<=flattenedInitialHash;
+end
+
+//apply hashing
+genvar hashVar;
+for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
+    wire [31:0] hashOutput [7: 0];
+    wire [255:0] flattenedHashOutput;
+    wire [255:0] flattenedPartialInput=partialHashes[hashVar];
+
+    hashRound hr(
+        flattenedPartialInput,
+        k[hashVar],
+        messageSchedule[hashVar],
+
+        flattenedHashOutput
+    );
+
+    always @(posedge clk) begin
+        partialHashes[hashVar+1]<=flattenedHashOutput;
+    end
+end
+
+
+assign flattenedOutput=partialHashes[64];
+
+endmodule
+DECL 4495 1544587117
+(*__std = "logic"*) 
+module hashModule(clk,flattenedInput,flattenedOutput);
+	parameter kflat = {32'h428a2f98,32'h71374491,32'hb5c0fbcf,32'he9b5dba5,32'h3956c25b,32'h59f111f1,32'h923f82a4,32'hab1c5ed5,32'hd807aa98,32'h12835b01,32'h243185be,32'h550c7dc3,32'h72be5d74,32'h80deb1fe,32'h9bdc06a7,32'hc19bf174,32'he49b69c1,32'hefbe4786,32'hfc19dc6,32'h240ca1cc,32'h2de92c6f,32'h4a7484aa,32'h5cb0a9dc,32'h76f988da,32'h983e5152,32'ha831c66d,32'hb00327c8,32'hbf597fc7,32'hc6e00bf3,32'hd5a79147,32'h6ca6351,32'h14292967,32'h27b70a85,32'h2e1b2138,32'h4d2c6dfc,32'h53380d13,32'h650a7354,32'h766a0abb,32'h81c2c92e,32'h92722c85,32'ha2bfe8a1,32'ha81a664b,32'hc24b8b70,32'hc76c51a3,32'hd192e819,32'hd6990624,32'hf40e3585,32'h106aa070,32'h19a4c116,32'h1e376c08,32'h2748774c,32'h34b0bcb5,32'h391c0cb3,32'h4ed8aa4a,32'h5b9cca4f,32'h682e6ff3,32'h748f82ee,32'h78a5636f,32'h84c87814,32'h8cc70208,32'h90befffa,32'ha4506ceb,32'hbef9a3f7,32'hc67178f2};
+	parameter kSize = 64;
+	input wire clk;
+	input wire[255:0] flattenedInput;
+	output wire[255:0] flattenedOutput;
+	wire[31:0] k[63:0];
+	genvar kVar;
+	for (kVar = 0; kVar < 64; kVar = kVar + 1) begin : kInitialLoop
+		assign k[kVar] = ((kflat >> (32 * (kSize - kVar - 1))) & {32 {1'b1}});
+	end 
+	wire[31:0] messageSchedule[63:0];
+	wire[31:0] nonce[7:0];
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : unflatten
+		assign nonce[index1] = flattenedInput[255 - 32 * index1:224 - 32 * index1];
+	end 
+	genvar copyVar;
+	for (copyVar = 0; copyVar < 8; copyVar = copyVar + 1) begin : copy
+		assign messageSchedule[copyVar] = nonce[copyVar];
+	end 
+	assign messageSchedule[8] = 32'h80000000;
+	genvar zeroVar;
+	for (zeroVar = 9; zeroVar < 15; zeroVar = zeroVar + 1) begin : zeros
+		assign messageSchedule[zeroVar] = 0;
+	end 
+	assign messageSchedule[15] = 32;
+	genvar wVar;
+	for (wVar = 16; wVar < 64; wVar = wVar + 1) begin : scheduleFill
+		wire[31:0] outputwVar;
+		MSUnit ms(messageSchedule[wVar - 15],messageSchedule[wVar - 2],messageSchedule[wVar - 16],messageSchedule[wVar - 7],outputwVar);
+		assign messageSchedule[wVar] = outputwVar;
+	end 
+	reg[255:0] partialHashes[64:0];
+	wire[31:0] initialHash[7:0];
+	assign initialHash[0] = 32'h6a09e667;
+	assign initialHash[1] = 32'hbb67ae85;
+	assign initialHash[2] = 32'h3c6ef372;
+	assign initialHash[3] = 32'ha54ff53a;
+	assign initialHash[4] = 32'h510e527f;
+	assign initialHash[5] = 32'h9b05688c;
+	assign initialHash[6] = 32'h1f83d9ab;
+	assign initialHash[7] = 32'h5be0cd19;
+	wire[255:0] flattenedInitialHash;
+	genvar initialHashVar;
+	for (initialHashVar = 0; initialHashVar < 8; initialHashVar = initialHashVar + 1) begin : initialHashLoop
+		assign flattenedInitialHash[255 - 32 * initialHashVar:224 - 32 * initialHashVar] = initialHash[initialHashVar];
+	end 
+	initial begin
+		partialHashes[0] <= flattenedInitialHash;
+	end 
+	genvar hashVar;
+	for (hashVar = 0; hashVar < 64; hashVar = hashVar + 1) begin : hashLoop
+		wire[31:0] hashOutput[7:0];
+		wire[255:0] flattenedHashOutput;
+		wire[255:0] flattenedPartialInput;
+		assign flattenedPartialInput = partialHashes[hashVar];
+		hashRound hr(flattenedPartialInput,k[hashVar],messageSchedule[hashVar],flattenedHashOutput);
+		always @(posedge clk) begin
+			partialHashes[hashVar + 1] <= flattenedHashOutput;
+		end 
+	end 
+	assign flattenedOutput = partialHashes[64];
+endmodule
+PARSE 4495 1544587117
+
+PARSE 4495 1544587117
+
+
+
+wire [31:0] nonce [7:0];
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+endmodule
+PARSE 4495 1544587117
+
+wire [31:0] hash [7:0];
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+endmodule
+PARSE 4495 1544587117
+
+
+assign nonce[0]=32'h61000000;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+endmodule
+PARSE 4495 1544587117
+
+genvar zeroVar;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+endmodule
+PARSE 4495 1544587117
+
+for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
+    assign nonce[zeroVar]=0;
+end
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+endmodule
+PARSE 4495 1544587117
+
+wire [255:0] flattenedNonce;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+endmodule
+PARSE 4495 1544587117
+
+wire [255:0] flattenedHash;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+endmodule
+PARSE 4495 1544587117
+
+
+genvar index1;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+endmodule
+PARSE 4495 1544587117
+
+for (index1=0; index1 < 8; index1=index1+1) begin: flatten
+    assign flattenedNonce[255-32*index1:224-32*index1] = nonce[index1];
+end
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+endmodule
+PARSE 4495 1544587117
+hashModule m(
+  clock.val,
+  flattenedNonce,
+  flattenedHash
+);
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+endmodule
+PARSE 4495 1544587117
+
+
+genvar index2;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+endmodule
+PARSE 4495 1544587117
+
+for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
+    assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
+end
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+endmodule
+PARSE 4495 1544587117
+
+reg [5:0] count = 0;
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+endmodule
+PARSE 4495 1544587117
+
+always @(posedge clock.val) begin
+  count <= (count + 1);
+  if ((&count)) begin
+    $display("%h", hash[0]);
+    $finish(1);
+  end
+end
+ITEM 4495 1544587117
+(*__std = "logic",__target = "sw",__loc = "runtime"*) 
+module Root();
+	(*__target = "sw",__loc = "runtime"*) 
+	Clock clock();
+	wire[31:0] nonce[7:0];
+	wire[31:0] hash[7:0];
+	assign nonce[0] = 32'h61000000;
+	genvar zeroVar;
+	for (zeroVar = 2; zeroVar < 8; zeroVar = zeroVar + 1) begin : zeros
+		assign nonce[zeroVar] = 0;
+	end 
+	wire[255:0] flattenedNonce;
+	wire[255:0] flattenedHash;
+	genvar index1;
+	for (index1 = 0; index1 < 8; index1 = index1 + 1) begin : flatten
+		assign flattenedNonce[255 - 32 * index1:224 - 32 * index1] = nonce[index1];
+	end 
+	hashModule m(clock.val,flattenedNonce,flattenedHash);
+	genvar index2;
+	for (index2 = 0; index2 < 8; index2 = index2 + 1) begin : unflatten
+		assign hash[index2] = flattenedHash[255 - 32 * index2:224 - 32 * index2];
+	end 
+	reg[5:0] count = 0;
+	always @(posedge clock.val) begin
+		count <= (count + 1);
+		if ((&count)) begin
+			$display("%h",hash[0]);
+			$finish(1);
+		end 
+	end 
+endmodule
+PARSE 4495 1544587117
+
+
+/*
+always @(posedge clock.val) begin
+  $display("%d %d %d %d %d", g.gridScores[0][0], g.gridScores[0][1], g.gridScores[0][2], g.gridScores[0][3], g.gridScores[0][4]);
+  $display("%d %d %d %d %d", g.gridScores[1][0], g.gridScores[1][1], g.gridScores[1][2], g.gridScores[1][3], g.gridScores[1][4]);
+  $display("%d %d %d %d %d", g.gridScores[2][0], g.gridScores[2][1], g.gridScores[2][2], g.gridScores[2][3], g.gridScores[2][4]);
+  $display("%d %d %d %d %d", g.gridScores[3][0], g.gridScores[3][1], g.gridScores[3][2], g.gridScores[3][3], g.gridScores[3][4]);
+  $display("%d %d %d %d %d", g.gridScores[4][0], g.gridScores[4][1], g.gridScores[4][2], g.gridScores[4][3], g.gridScores[4][4]);
+  $display("");
+  
+  count <= (count + 1);
+  if (done | (&count)) begin
+    $display("%d", g.score);
+    $finish(1);
+  end
+end
+*/
+PARSE 4495 1544587117
+
