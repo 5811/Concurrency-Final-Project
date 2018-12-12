@@ -4,10 +4,10 @@ include hashModule.v;
 wire [31:0] nonce [7:0];
 wire [31:0] hash [7:0];
 
-assign nonce[0]=32'h61000000;
+assign nonce[0]=32'h6f000000;
 genvar zeroVar;
 for(zeroVar=2; zeroVar<8; zeroVar=zeroVar+1) begin: zeros
-    assign nonce[zeroVar]=0;
+    assign nonce[zeroVar]=32'h00000000;
 end
 
 wire [255:0] flattenedNonce;
@@ -28,11 +28,13 @@ for (index2=0; index2 < 8; index2=index2+1) begin: unflatten
     assign hash[index2] = flattenedHash[255-32*index2:224-32*index2];
 end
 
-reg [5:0] count = 0;
+
+reg [7:0] count = 0;
 always @(posedge clock.val) begin
   count <= (count + 1);
-  if ((&count)) begin
+  if (count>100) begin
     $display("%h", hash[0]);
+    $display("%h", flattenedHash);
     $finish(1);
   end
 end

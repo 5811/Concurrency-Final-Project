@@ -8,9 +8,9 @@ module MSUnit(
 
 );
     wire [31:0] S0;
-    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 17]} ^ {w15 >> 3};
+    assign S0 = {w15[6 : 0], w15[31 : 7]} ^ {w15[17 : 0], w15[31 : 18]} ^ {w15 >> 3};
     wire [31:0] S1;
-    assign S1 =  {w2[16 : 0], w2[31 : 18]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
+    assign S1 =  {w2[16 : 0], w2[31 : 17]} ^ {w2[18 : 0], w2[31 : 19]} ^ {w2 >> 10};
     
     assign w0=w16+S0+w7+S1;
 
@@ -99,27 +99,40 @@ for(kVar=0; kVar<64; kVar=kVar+1) begin: kInitialLoop
 end
 
 
-wire [31:0] messageSchedule[63:0];
+reg [31:0] messageSchedule[63:0];
 wire [31:0] nonce[7:0];
 genvar index1;
 for (index1=0; index1 < 8; index1=index1+1) begin: unflatten
     assign nonce[index1] = flattenedInput[255-32*index1:224-32*index1];
 end
 
+
 //copy nonce
 genvar copyVar;
 for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
-    assign messageSchedule[copyVar]=nonce[copyVar];
+    initial begin
+        messageSchedule[copyVar]=nonce[copyVar];
+    end
 end
 
 //insert 1 and pad 0s
-assign messageSchedule[8]=32'h80000000;
+
+initial begin
+     messageSchedule[8]=32'h80000000;
+end
+
 genvar zeroVar;
 for(zeroVar=9; zeroVar<15; zeroVar=zeroVar+1) begin: zeros
-    assign messageSchedule[zeroVar]=0;
+    initial begin
+        messageSchedule[zeroVar]=0;
+    end
 end
 //write in 32 as length into the last 32 bit word
-assign messageSchedule[15]=32;
+initial begin
+    messageSchedule[15]=256;
+end
+
+
 
 //rest of the schedule array is generated based on algorithm
 genvar wVar;
@@ -132,9 +145,29 @@ for(wVar=16; wVar<64; wVar=wVar+1) begin: scheduleFill
 
         outputwVar
     );
-
-    assign messageSchedule[wVar]=outputwVar;
+    always @(posedge clk) begin
+     messageSchedule[wVar]=outputwVar;
+    end
 end
+
+/*wire [2047:0]flattenedMessageSchedule;
+
+genvar indexf;
+for (indexf=0; indexf < 64; indexf=indexf+1) begin: flattenloop
+    assign flattenedMessageSchedule[2047-32*indexf:2016-32*indexf] = messageSchedule[indexf];
+end
+
+reg [7:0] count = 0;
+always @(posedge clk) begin
+    count <= count+1;
+    if (count == 49) begin
+        $display("m15: %h", messageSchedule[1]);
+        $display("m2: %h", messageSchedule[14]);
+        $display("m16: %h", messageSchedule[0]);
+        $display("m7: %h", messageSchedule[9]);
+        $display("messageSchedule: %h", flattenedMessageSchedule);
+    end
+end*/
 
 reg [255:0] partialHashes [64:0];
 //initialize our hash array to our default values
@@ -179,6 +212,8 @@ for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
 end
 
 
-assign flattenedOutput=partialHashes[64];
+
+
+assign flattenedOutput=flattenedInitialHash+partialHashes[64];
 
 endmodule
