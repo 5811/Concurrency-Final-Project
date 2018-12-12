@@ -173,7 +173,7 @@ for(hashVar=0; hashVar<64; hashVar=hashVar+1) begin: hashLoop
         flattenedHashOutput
     );
 
-    always @(posedge(clk)) begin
+    always @(posedge clk) begin
         partialHashes[hashVar+1]<=flattenedHashOutput;
     end
 end
