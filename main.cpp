@@ -21,7 +21,7 @@ static struct option long_options[]=
                     {"step", required_argument, nullptr, 's'}
                 };
 
-static std::string target="";
+static uint32_t target=16;
 static int workers=1;
 static int step=1;
 
@@ -57,6 +57,24 @@ uint32_t rightRotate (uint32_t value, uint32_t offset)
   return (value>>offset) | (value<<(-offset&31));
 }
 
+bool withinTarget(uint32_t hash[8], uint32_t leadingBits) {
+	uint8_t * byteHash = (uint8_t*)hash;
+	for (uint32_t i = 0; i < (leadingBits+7)/8; i++) {
+		int subsection = 3-(i%4);
+		int byteHashIndex = (i/4)*4+subsection;
+		if ((i+1)*8<=leadingBits) {
+			if (byteHash[byteHashIndex] != 0) {
+				return false;
+			}
+		} else {
+			int nonZeroBits = ((i+1)*8-leadingBits);
+			if ((byteHash[byteHashIndex] >> nonZeroBits) != 0) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
 const uint32_t roundConstants[64] = 
 {
@@ -225,7 +243,7 @@ void incrementNonce(uint32_t* value, uint32_t increment){
             }
         }
 }
-void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t increment, uint32_t* result){
+void searchForNonceThread(uint32_t leadingBits, uint32_t startingValue, uint32_t increment, uint32_t* result){
     //allocate 32 bytes for the nonce we are going to hash
     //since we are using SHA 256, the number of possible inputs with 32 bytes is the same as the number of possible hashes
     //there may be some overlap, but we are not looking for an exact hash so it should be reasonable to expect us to find a working nonce
@@ -246,7 +264,8 @@ void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t
             return;
         }
         else{
-                if(((uint16_t*)tempHash)[1]==leadingByte){
+				if(withinTarget(tempHash, leadingBits)) {
+                //if(((uint16_t*)tempHash)[1]==leadingByte){
                     done=true;
                     /*
                     std::cout<<"Found something that hashes to: ";
@@ -271,7 +290,7 @@ void searchForNonceThread(uint16_t leadingByte, uint32_t startingValue, uint32_t
 
 }
 
-void searchForNonceGPU(uint16_t leadingByte, uint32_t blocks, uint32_t* result){
+void searchForNonceGPU(uint32_t leadingBits, uint32_t blocks, uint32_t* result){
 
 
     uint32_t* gpuResult;
@@ -283,7 +302,7 @@ void searchForNonceGPU(uint16_t leadingByte, uint32_t blocks, uint32_t* result){
 	cudaMalloc((void**)&deviceDone, sizeof(int));
 	cudaMemcpy(deviceDone,0,sizeof(int),cudaMemcpyHostToDevice); 
 
-    searchForNonce<<<blocks, 32>>>(leadingByte, gpuResult, deviceDone);
+    searchForNonce<<<blocks, 32>>>(leadingBits, gpuResult, deviceDone);
 
 	cudaFree(deviceDone);
 
@@ -305,8 +324,8 @@ int main(int argc, char** argv){
             switch(opt)
             {
                     case 't':
-                            target=std::string(optarg);
-                            std::cout<<"Target leading characters of hash: "<< target<<std::endl;
+                            target=std::stoi(optarg);
+                            std::cout<<"Target leading bits of hash: "<< target<<std::endl;
                             break;
 
                     case 'w':
@@ -337,14 +356,14 @@ int main(int argc, char** argv){
 
 
             startTimer();
-            searchForNonceThread(0, 0, 1, (uint32_t*)nonce);
+            searchForNonceThread(target, 0, 1, (uint32_t*)nonce);
             timeTaken=endTimer();
             
             break;
         case 2:
             startTimer();
             for(int i=0; i<workers; i++){
-                workerThreads[i]=std::thread(searchForNonceThread, 0, i,workers,(uint32_t*)nonce);
+                workerThreads[i]=std::thread(searchForNonceThread, target, i,workers,(uint32_t*)nonce);
 
             }
             for(int i=0; i<workers; i++){
@@ -357,7 +376,7 @@ int main(int argc, char** argv){
         case 3:
 
             gpuStart=getGpuTime();
-            searchForNonceGPU(0, workers, (uint32_t*) nonce);
+            searchForNonceGPU(target, workers, (uint32_t*) nonce);
             timeTaken=(double)getElapsedGpuTime(gpuStart);
             break;
 

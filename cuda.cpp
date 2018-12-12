@@ -40,6 +40,27 @@ uint32_t deviceRightRotate (uint32_t value, uint32_t offset)
   return (value>>offset) | (value<<(-offset&31));
 }
 
+__device__
+bool deviceWithinTarget(uint32_t hash[8], uint32_t leadingBits) {
+    uint8_t * byteHash = (uint8_t*)hash;
+    for (uint32_t i = 0; i < (leadingBits+7)/8; i++) {
+        int subsection = 3-(i%4);
+        int byteHashIndex = (i/4)*4+subsection;
+        if ((i+1)*8<=leadingBits) {
+            if (byteHash[byteHashIndex] != 0) {
+                return false;
+            }
+        } else {
+            int nonZeroBits = ((i+1)*8-leadingBits);
+            if ((byteHash[byteHashIndex] >> nonZeroBits) != 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 __constant__
 const uint32_t deviceRoundConstants[64] = 
 {
@@ -205,7 +226,7 @@ void deviceIncrementNonce(uint32_t* value, uint32_t increment){
         }
 }
 __global__
-extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult,int*done){
+extern void searchForNonce(uint32_t leadingBits,uint32_t* gpuResult,int*done){
 
 	uint32_t myId= blockIdx.x*blockDim.x + threadIdx.x;
 	uint32_t increment=blockDim.x*gridDim.x;
@@ -219,8 +240,8 @@ extern void searchForNonce(uint16_t leadingByte,uint32_t* gpuResult,int*done){
 	while((*done)==0){
 		deviceHash((char*)nonce, 32, tempHash);
 
-
-        if(((uint16_t*)tempHash)[1]==leadingByte){
+		if(deviceWithinTarget(tempHash, leadingBits)) {
+        //if(((uint16_t*)tempHash)[1]==leadingByte){
 			//if we found a matching value set done
 			int currentVal=atomicExch(done, 1);
 			//if we got the 0, memcopy our result
