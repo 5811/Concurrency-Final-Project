@@ -110,7 +110,7 @@ end
 //copy nonce
 genvar copyVar;
 for(copyVar=0; copyVar<8; copyVar=copyVar+1) begin: copy
-    initial begin
+    always @(posedge clk) begin
         messageSchedule[copyVar]=nonce[copyVar];
     end
 end
