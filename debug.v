@@ -49,15 +49,26 @@ for(moduleVar=0; moduleVar<NUM_MODULES; moduleVar=moduleVar+1) begin: modules
   always @(posedge clock.val) begin
   //if we have a completed hash
     if (count%CYCLES_TO_HASH==0) begin
-      //$display("%h", flattenedNonce);
-      //$display("%h", flattenedHash);
+    /*
+      $display("%h", flattenedNonce);
+      $display("%h", flattenedHash);
+      */
       if(done[moduleVar])begin
-        //$display("Found Done");
-        if(done>>(NUM_MODULES-moduleVar) ==0)begin
+      /*
+        $display("Found Done");
+        $display("%b", done);
+        $display("%d", (NUM_MODULES-moduleVar));
+        $display("%b", done<<(NUM_MODULES-moduleVar));
+        $display("%d", ~(|(done<<(NUM_MODULES-moduleVar)))   );
+        */
+        if(~(|(done<<(NUM_MODULES-moduleVar))) )begin
           validNonce<=flattenedNonce;
           validHash<=flattenedHash;
-          //$display("%h", flattenedNonce);
-          //$display("%h", flattenedHash);
+          /*
+          $display("Should Finish");
+          $display("%h", flattenedNonce);
+          $display("%h", flattenedHash);
+          */
           fullDone<=1;
         end
       end
